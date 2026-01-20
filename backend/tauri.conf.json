@@ -1,0 +1,68 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "desktop_email_client",
+	"version": "0.1.0",
+	"identifier": "com.github.p3anutt42.desktop-email-client",
+	"build": {
+		"frontendDist": "../frontend/dist",
+		"beforeDevCommand": "cd frontend && trunk watch",
+		"beforeBuildCommand": "cd frontend && trunk build"
+	},
+	"app": {
+		"withGlobalTauri": true,
+		"windows": [
+			{
+				"title": "Email Client",
+				"width": 800,
+				"height": 600,
+				"resizable": true,
+				"fullscreen": false
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"resources": ["../frontend/dist"],
+		"externalBin": [],
+		"copyright": "",
+		"shortDescription": "",
+		"longDescription": "",
+		"linux": {
+			"appimage": {
+				"bundleMediaFramework": false,
+				"files": {}
+			},
+			"deb": {
+				"files": {}
+			},
+			"rpm": {
+				"epoch": 0,
+				"files": {},
+				"release": "1"
+			}
+		},
+		"macOS": {
+			"frameworks": [],
+			"exceptionDomain": "localhost",
+			"signingIdentity": null,
+			"providerShortName": null,
+			"entitlements": null
+		},
+		"windows": {
+			"certificateThumbprint": null,
+			"digestAlgorithm": "sha256",
+			"timestampUrl": ""
+		}
+	}
+}

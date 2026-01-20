@@ -1,0 +1,18 @@
+[package]
+name = "desktop_email_client_backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+desktop_email_client = { path = "../" }
+tokio = { version = "1.49.0", features = ["macros"] }
+actix-files = "0.6.9"
+actix-rt = "2.11.0"
+actix-web = "4.12.1"
+tauri = { version = "2.9.5", features = [] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+fuzzy-matcher = "0.3.7"
+
+[build-dependencies]
+tauri-build = { version = "2.5.3", features = [] }

@@ -1,0 +1,7 @@
+
+dist
+
+node_modules/
+
+# generated with tailwindcss/cli
+static/tailwind.css
