@@ -33,7 +33,7 @@ pub fn EmailView(email: &Rc<Email>) -> Html {
 pub fn EmailBodyView(email: &Rc<Email>) -> Html {
 	match email.body.clone() {
 		EmailBody::TextOnly(text_body) => html! {
-			<div>{ text_body }</div>
+			<div class="whitespace-break-spaces">{ text_body }</div>
 		},
 		EmailBody::Html(html_body) => html! {
 			<iframe

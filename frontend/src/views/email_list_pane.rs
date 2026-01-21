@@ -1,12 +1,10 @@
-use chrono::Utc;
-use desktop_email_client::{Email, EmailAccountSelection};
+use crate::{AppState, pretty_format_date_time};
+use desktop_email_client::{Email, EmailBody};
 use std::rc::Rc;
 use uuid::Uuid;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
-
-use crate::AppState;
 
 #[autoprops]
 #[component]
@@ -16,8 +14,6 @@ pub fn EmailListPane(email_searchbar_input_ref: &NodeRef) -> Html {
 			<EmailSearchbar email_searchbar_input_ref={email_searchbar_input_ref} />
 
 			<EmailListItems />
-
-			<EmailAccountSelector />
 		</ul>
 	}
 }
@@ -49,7 +45,7 @@ fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
 	};
 
 	html! {
-		<div class="bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/60">
+		<div class="bg-background/95 p-4">
 			<div class="relative">
 				<svg class="lucide lucide-search absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
 					width="24"
@@ -109,19 +105,34 @@ fn EmailListItems() -> Html {
 				}
 			}
 		}
-		None => html! {
+		None => {
+			let mut search_results = vec![];
+
 			for (email_account_index, email_account) in state.email_accounts.iter().enumerate() {
-				if state.email_account_selection.is_selected(email_account_index as u32) {
+				if state
+					.email_account_selection
+					.is_selected(email_account_index as u32)
+				{
 					for (email_uuid, email) in email_account.provider.get_emails() {
-						<EmailListItem
-							email={email}
-							email_uuid={*email_uuid}
-							selected={state.selected_email_uuid == Some(*email_uuid)}
-						/>
+						search_results.push((*email_uuid, email.clone()));
 					}
 				}
 			}
-		},
+
+			// order by time sent descending (latest to oldest)
+			search_results
+				.sort_by(|(_, email_a), (_, email_b)| email_b.sent_time.cmp(&email_a.sent_time));
+
+			html! {
+				for (email_uuid, email) in search_results {
+					<EmailListItem
+						email={email}
+						email_uuid={email_uuid}
+						selected={state.selected_email_uuid == Some(email_uuid)}
+					/>
+				}
+			}
+		}
 	};
 
 	html! {
@@ -137,9 +148,6 @@ fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
 	let classes = "p-[7px] rounded-[7px] border-2";
 	let selected_classes = format!("{} bg-[#555] border-transparent", classes);
 	let not_selected_classes = format!("{} border-[#222] hover:bg-[#222] cursor-pointer", classes);
-	let seconds_ago = Utc::now()
-		.signed_duration_since(email.sent_time)
-		.as_seconds_f32();
 
 	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
 	let email_uuid = *email_uuid;
@@ -155,6 +163,7 @@ fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
 			..(*app_state).clone()
 		});
 	};
+	let time_sent_ago_formatted = pretty_format_date_time(&email.sent_time);
 
 	html! {
 		<div
@@ -163,77 +172,40 @@ fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
 			onclick={on_click}
 		>
 			<div class="flex flex-row items-center gap-2 w-full">
+				<EmailAvatar />
 				<div class="font-semibold truncate">{ &email.subject }</div>
 				if !is_email_read {
 					<div class="bg-blue-500 w-2 h-2 rounded-full shrink-0"></div>
 				}
-				// TODO: human readable: 1 min ago, 5 days ago, ...
 				<div class="ml-auto text-xs text-muted-foreground" style="text-wrap: nowrap;">
-					{ format!("{} secs ago", seconds_ago) }
+					{time_sent_ago_formatted}
 				</div>
 			</div>
-			<small>{ &email.author }</small>
+			if let EmailBody::TextOnly(body_text) = &email.body {
+				<small class="truncate nowrap block">{ body_text.clone() }</small>
+			}
+			<div class="flex flex-row gap-1">
+				for tag_name in email.tags.iter() {
+					<EmailTagBadge name={tag_name.clone()} />
+				}
+			</div>
 		</div>
 	}
 }
 
-// TODO: make generic enum UI
+#[autoprops]
 #[component]
-fn EmailAccountSelector() -> Html {
-	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
-
-	let all_selected = app_state.email_account_selection.all_selected();
-	let is_email_account_index_selected = |email_account_index| matches!(&app_state.email_account_selection, EmailAccountSelection::Single{ index } if *index == email_account_index as u32);
-
-	let email_account_select = use_node_ref();
-	let on_change_email_selection = {
-		let app_state = app_state.clone();
-		let email_account_select = email_account_select.clone();
-		move |_e| {
-			if let Some(email_account_select) = email_account_select
-				.cast::<HtmlInputElement>()
-				.map(|select| select.value())
-			{
-				match email_account_select.parse::<i64>() {
-					Ok(index) => app_state.set(AppState {
-						email_account_selection: match index {
-							-1 => EmailAccountSelection::All,
-							_ => EmailAccountSelection::Single {
-								index: index as u32,
-							},
-						},
-						..(*app_state).clone()
-					}),
-					Err(e) => {
-						tracing::error!("failed to parse email account selection value: {}", e)
-					}
-				}
-			}
-		}
-	};
-
+fn EmailTagBadge(name: &AttrValue) -> Html {
 	html! {
-		<div class="p-[5px]">
-
-			<select
-				ref={email_account_select}
-				class="mt-auto p-2 rounded-lg"
-				onchange={on_change_email_selection}
-			>
-				<option value="-1" selected={all_selected}>
-					{ "All" }
-				</option>
-
-				for (email_account_index, email_account) in app_state.email_accounts.iter().enumerate() {
-					<option
-						value={format!("{}", email_account_index)}
-						selected={is_email_account_index_selected(email_account_index)}
-					>
-						{ &email_account.name }
-					</option>
-				}
-			</select>
-
+		<div class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-white text-black foreground shadow hover:bg-primary/80">
+			{name}
 		</div>
+	}
+}
+
+#[component]
+fn EmailAvatar() -> Html {
+	html! {
+		<img src="https://www.w3schools.com/howto/img_avatar.png" class="w-[50px] h-[50px] align-middle rounded-full" />
 	}
 }

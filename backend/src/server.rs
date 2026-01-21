@@ -17,7 +17,14 @@ pub async fn run_server(bind_address: &str) -> std::io::Result<()> {
 			.wrap(Logger::default())
 			.configure(move |cfg| {
 				// TODO: configure_routes(cfg, shared_state);
-				cfg.service(Files::new("/", "../frontend/dist/").index_file("index.html"));
+				// cfg.service(Files::new("/", "../frontend/dist/").index_file("index.html"));
+				cfg.service(
+					Files::new(
+						"/",
+						"/home/peter/github/desktop_email_client/frontend/dist/",
+					)
+					.index_file("index.html"),
+				);
 			})
 	})
 	.bind(bind_address)?

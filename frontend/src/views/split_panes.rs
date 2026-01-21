@@ -9,8 +9,9 @@ use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::{DomRect, HtmlElement};
 use yew::prelude::*;
 use yew::virtual_dom::VNode;
+use yew_hooks::use_local_storage;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Axis {
 	Vertical,
 	Horizontal,
@@ -45,9 +46,14 @@ impl Axis {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct Props {
+	/// unique name to store last width in local storage
+	pub name: AttrValue,
 	pub axis: Axis,
 	#[prop_or_default]
 	pub height: Option<String>,
+	/// of the left/top element
+	#[prop_or_default]
+	pub starting_width: Option<i32>,
 
 	#[prop_or_default]
 	pub left: Option<VNode>,
@@ -59,25 +65,33 @@ pub struct Props {
 	pub bottom: Option<VNode>,
 }
 
+// TODO: make left/top side width absolute (pixels, not percentage)
 #[function_component]
 pub fn SplitPanes(props: &Props) -> Html {
 	let container = use_node_ref();
-	let drag = use_node_ref();
+	let drag_area = use_node_ref();
 
 	let is_resizing = use_mut_ref(|| false);
 	let x = use_mut_ref(|| 0);
 	let y = use_mut_ref(|| 0);
-	let left_width = use_mut_ref(|| 50.0);
+	let left_width_storage =
+		use_local_storage::<i32>(format!("split_panes_{}_left_width", props.name));
+	let left_width = use_mut_ref(|| {
+		left_width_storage
+			.clone()
+			.unwrap_or(props.starting_width.unwrap_or(400))
+	});
 	let container_width = use_mut_ref(|| 0);
 
 	let stopped_resizing = use_state(|| false);
 	let new_left_width = use_state(|| *left_width.borrow_mut());
 
-	let mut left_style = format!("{}: {}%;", props.axis.resize_dir(), *new_left_width);
+	let mut left_style = format!("{}: {}px;", props.axis.resize_dir(), *new_left_width);
 	let mut right_style = String::from("flex: 1 1 0%;");
 	let mut container_style = format!(
-		"display: flex; flex: 1 1 0%; flex-direction: {};",
-		props.axis.flex_dir()
+		"display: flex; flex: 1 1 0%; flex-direction: {}; {}: 100%;",
+		props.axis.flex_dir(),
+		props.axis.resize_dir()
 	);
 
 	if *is_resizing.borrow_mut() {
@@ -104,7 +118,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 		let container_width = container_width.clone();
 		let container = container.clone();
 		let props = props.clone();
-		use_effect_with(container, |container| {
+		use_effect_with(container, move |container| {
 			let div = container
 				.cast::<HtmlElement>()
 				.expect("drag not attached to div element");
@@ -121,7 +135,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 		let container_width = container_width.clone();
 		let container = container.clone();
 		let props = props.clone();
-		use_effect_with(container, |container| {
+		use_effect_with(container, move |container| {
 			let div = container
 				.cast::<HtmlElement>()
 				.expect("drag not attached to div element");
@@ -137,11 +151,11 @@ pub fn SplitPanes(props: &Props) -> Html {
 		// Create mouse down listener
 		let x = x.clone();
 		let y = y.clone();
-		let drag = drag.clone();
+		let drag = drag_area.clone();
 		let left_width = left_width.clone();
 		let is_resizing = is_resizing.clone();
 		let props = props.clone();
-		use_effect_with(drag, |drag| {
+		use_effect_with(drag, move |drag| {
 			let drag = drag.clone();
 			let div = drag
 				.cast::<HtmlElement>()
@@ -152,7 +166,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 					*x.borrow_mut() = ev.client_x();
 					*y.borrow_mut() = ev.client_y();
 					let size = props.axis.rect(&left_side.get_bounding_client_rect());
-					*left_width.borrow_mut() = size as f64;
+					*left_width.borrow_mut() = size;
 					*is_resizing.borrow_mut() = true;
 					let div = drag
 						.cast::<HtmlElement>()
@@ -171,6 +185,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 		// Create mouse move listener
 		let container = container.clone();
 		let is_resizing = is_resizing.clone();
+		let new_left_width = new_left_width.clone();
 		let props = props.clone();
 		use_effect_with(container, move |container| {
 			let div = container
@@ -188,9 +203,9 @@ pub fn SplitPanes(props: &Props) -> Html {
 							Axis::Vertical => dx,
 							Axis::Horizontal => dy,
 						};
-						let w = ((*left_width.borrow_mut() + d as f64) * 100.0)
-							/ *container_width.borrow_mut() as f64;
+						let w = *left_width.borrow_mut() + d;
 						new_left_width.set(w);
+						left_width_storage.set(w);
 					}
 				}));
 			div.add_event_listener_with_callback("pointermove", listener.as_ref().unchecked_ref())
@@ -203,7 +218,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 	{
 		// Create mouse up listener
 		let container = container.clone();
-		let drag = drag.clone();
+		let drag = drag_area.clone();
 		use_effect_with((container, drag), move |(container, drag)| {
 			let drag = drag.clone();
 			let drag_div = drag.cast::<HtmlElement>().expect("drag not div element");
@@ -227,10 +242,10 @@ pub fn SplitPanes(props: &Props) -> Html {
 
 	let container_class_name = container_css.get_class_name().to_string();
 
-	// width of the area that dragging is allowed
-	let drag_width = "15px";
-	// width of the visible line
-	let drag_line_width = "1px";
+	// width/height of the area that dragging is allowed
+	let drag_area_size = "24px";
+	// width/height of the visible line
+	let drag_line_stroke_width = "1px";
 
 	let (first_id, second_id, drag_id) = match props.axis {
 		Axis::Vertical => ("left", "right", "vertical"),
@@ -240,6 +255,14 @@ pub fn SplitPanes(props: &Props) -> Html {
 		Axis::Vertical => (props.left.clone(), props.right.clone()),
 		Axis::Horizontal => (props.top.clone(), props.bottom.clone()),
 	};
+	let (drag_area_width, drag_area_height) = match props.axis {
+		Axis::Vertical => (drag_area_size, "100%"),
+		Axis::Horizontal => ("100%", drag_area_size),
+	};
+	let (drag_line_width, drag_line_height) = match props.axis {
+		Axis::Vertical => (drag_line_stroke_width, "100%"),
+		Axis::Horizontal => ("100%", drag_line_stroke_width),
+	};
 	let cursor_style = props.axis.cursor();
 
 	// TODO: remove horizontal axis or truly generalize this implementation -> see width: {}, height: 100%
@@ -248,28 +271,19 @@ pub fn SplitPanes(props: &Props) -> Html {
 			<div class={format!("panel {}", left_css.get_class_name())} id={first_id}>
 				{ first_html }
 			</div>
-			<div ref={drag} class="drag" style={format!("cursor:{}; width: {}; height: 100%; display: flex; justify-content: center;", cursor_style, drag_width)} id={drag_id}>
-				<div style={format!("width: {}; height: 100%; background-color: white;", drag_line_width)} />
+			<div
+				id={drag_id}
+				ref={drag_area}
+				class="drag"
+				style={format!("cursor:{}; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", cursor_style, drag_area_width, drag_area_height, props.axis.flex_dir())}
+			>
+				<div class="bg-[#555]" style={format!("width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", drag_line_width, drag_line_height, props.axis.flex_dir())}>
+					<div style={format!("width: {}; height: {};", drag_area_width, drag_area_height)} />
+				</div>
 			</div>
-			<div class={format!("panel {}", right_css.get_class_name())} id={second_id}>
+			<div class={format!("panel {}", right_css.get_class_name())} style="width: 100%" id={second_id}>
 				{ second_html }
 			</div>
-		</div>
-	}
-}
-
-#[component]
-fn SplitDragIndicator() -> Html {
-	html! {
-		<div class="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical h-2.5 w-2.5">
-				<circle cx="9" cy="12" r="1" />
-				<circle cx="9" cy="5" r="1" />
-				<circle cx="9" cy="19" r="1" />
-				<circle cx="15" cy="12" r="1" />
-				<circle cx="15" cy="5" r="1" />
-				<circle cx="15" cy="19" r="1" />
-			</svg>
 		</div>
 	}
 }

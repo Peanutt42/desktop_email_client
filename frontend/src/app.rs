@@ -2,7 +2,7 @@ use std::{collections::HashSet, rc::Rc};
 
 use crate::{
 	KeyboardShortcutListener,
-	views::{Axis, EmailListPane, ReaderPane, SplitPanes},
+	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
 };
 use desktop_email_client::{EmailAccount, EmailAccountSelection, EmailProvider};
 use uuid::Uuid;
@@ -14,6 +14,10 @@ pub fn App() -> Html {
 
 	let email_searchbar_input_ref = NodeRef::default();
 
+	let email_folder_pane = html! {
+		<EmailFolderPane />
+	};
+
 	let email_list_pane = html! {
 		<EmailListPane
 			email_searchbar_input_ref={&email_searchbar_input_ref}
@@ -24,16 +28,28 @@ pub fn App() -> Html {
 		<ReaderPane />
 	};
 
+	let main_pane = html! {
+		<SplitPanes
+			name="folder_sidebar"
+			axis={Axis::Vertical}
+			height={"100vh"}
+			left={email_list_pane}
+			right={reader_pane}
+		/>
+	};
+
 	html! {
-		<main class="font-sans m-0 text-white bg-black">
-			<ContextProvider<UseStateHandle<AppState>> context={app_state}>
+		<main class="font-sans m-0">
+			<ContextProvider<UseStateHandle<AppState>> context={app_state.clone()}>
 				<SplitPanes
+					name="list_reader_split"
 					axis={Axis::Vertical}
 					height={"100vh"}
-					left={email_list_pane}
-					right={reader_pane}
+					starting_width=500
+					left={email_folder_pane}
+					right={main_pane}
 				/>
-				<KeyboardShortcutListener email_searchbar_input_ref={email_searchbar_input_ref} />
+				<KeyboardShortcutListener email_searchbar_input_ref={email_searchbar_input_ref} app_state={app_state} />
 			</ContextProvider<UseStateHandle<AppState>>>
 		</main>
 	}
@@ -54,22 +70,22 @@ impl AppState {
 				Rc::new(EmailAccount::new(
 					"Account 1".to_string(),
 					"account1@example.com".to_string(),
-					EmailProvider::create_fake(),
+					EmailProvider::create_mock(),
 				)),
 				Rc::new(EmailAccount::new(
 					"Account 2".to_string(),
 					"account2@example.com".to_string(),
-					EmailProvider::create_fake(),
+					EmailProvider::create_mock(),
 				)),
 				Rc::new(EmailAccount::new(
 					"Account 3".to_string(),
 					"account3@example.com".to_string(),
-					EmailProvider::create_fake(),
+					EmailProvider::create_mock(),
 				)),
 				Rc::new(EmailAccount::new(
 					"Account 4".to_string(),
 					"account4@example.com".to_string(),
-					EmailProvider::create_fake(),
+					EmailProvider::create_mock(),
 				)),
 			],
 			email_account_selection: EmailAccountSelection::All,

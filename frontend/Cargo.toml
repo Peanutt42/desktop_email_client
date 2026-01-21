@@ -10,9 +10,14 @@ chrono = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tracing-web = { workspace = true }
-yew = { version="0.22", features=["csr"] }
+yew = { version = "0.22", features = ["csr"] }
 yew-autoprops = "0.4.1"
 web-sys = { version = "0.3.84", features = ["DomRect"] }
 gloo = "0.11.0"
 # TODO: Remove, only here because of yew-resize-split-view
-stylist = {version = "0.11", features = ["yew_integration", "macros", "parser"]}
+stylist = { version = "0.11", features = [
+	"yew_integration",
+	"macros",
+	"parser",
+] }
+yew-hooks = "0.4.0"
