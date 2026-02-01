@@ -1,6 +1,9 @@
 use chrono::{DateTime, Local, Utc};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
-use std::{collections::HashMap, rc::Rc};
+use std::{
+	collections::{HashMap, HashSet},
+	rc::Rc,
+};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,7 +26,9 @@ pub struct Email {
 	pub author: String,
 	pub body: EmailBody,
 	pub sent_time: DateTime<Utc>,
-	pub tags: Vec<String>,
+	/// Uuid's of folders / tags
+	/// TODO: Think of how to handle order of folders, etc.
+	pub folder_tags: HashSet<Uuid>,
 }
 impl Email {
 	// TODO: search email by author and body too, not just subject
@@ -49,6 +54,43 @@ impl EmailAccount {
 			provider,
 		}
 	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EmailFolder {
+	pub uuid: Uuid,
+	pub name: String,
+	pub subfolders: Vec<EmailFolder>,
+}
+impl EmailFolder {
+	pub fn new(name: impl Into<String>, subfolders: Vec<EmailFolder>) -> Self {
+		Self {
+			uuid: Uuid::new_v4(),
+			name: name.into(),
+			subfolders,
+		}
+	}
+
+	pub fn single(name: impl Into<String>) -> Self {
+		Self {
+			uuid: Uuid::new_v4(),
+			name: name.into(),
+			subfolders: vec![],
+		}
+	}
+}
+/// recursively searches folders and their subfolders for folder with given uuid
+pub fn get_email_folder_by_uuid(folders: &[EmailFolder], uuid: Uuid) -> Option<&EmailFolder> {
+	for folder in folders {
+		if folder.uuid == uuid {
+			return Some(folder);
+		}
+		if let Some(folder) = get_email_folder_by_uuid(&folder.subfolders, uuid) {
+			return Some(folder);
+		}
+	}
+
+	None
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,30 +150,55 @@ impl EmailAccountSelection {
 // TOOD: refactor once necessary
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EmailProvider {
-	Fake { emails: HashMap<Uuid, Rc<Email>> },
+	Fake {
+		emails: HashMap<Uuid, Rc<Email>>,
+		email_folders: Vec<EmailFolder>,
+	},
 }
 impl EmailProvider {
 	pub fn get_emails(&self) -> &HashMap<Uuid, Rc<Email>> {
 		match self {
-			Self::Fake { emails } => emails,
+			Self::Fake { emails, .. } => emails,
 		}
 	}
 
 	pub fn get_emails_mut(&mut self) -> &mut HashMap<Uuid, Rc<Email>> {
 		match self {
-			Self::Fake { emails } => emails,
+			Self::Fake { emails, .. } => emails,
+		}
+	}
+
+	pub fn get_folders(&self) -> &[EmailFolder] {
+		match self {
+			Self::Fake { email_folders, .. } => email_folders,
 		}
 	}
 
 	pub fn create_mock() -> Self {
+		let inbox_folder = EmailFolder::single("Inbox");
+		let friends_folder = EmailFolder::single("Friends");
+		let moodle_folder = EmailFolder::single("Moodle");
+		let important_folder = EmailFolder::new(
+			"Important",
+			vec![friends_folder.clone(), moodle_folder.clone()],
+		);
+		let not_important_folder = EmailFolder::single("Not important");
+		let status_system_folder = EmailFolder::single("Status system");
+
 		Self::Fake {
-			emails: vec![
+			email_folders: vec![
+				inbox_folder.clone(),
+				important_folder,
+				not_important_folder.clone(),
+				status_system_folder.clone()
+			],
+			emails: [
 				Rc::new(Email {
 					subject: "Hello".into(),
 					author: "alice@example.com".into(),
 					body: EmailBody::text_only("Hello from Alice"),
 					sent_time: Local::now().with_timezone(&Utc) - std::time::Duration::from_mins(1),
-					tags: vec!["Friends".to_string()],
+					folder_tags: [friends_folder.uuid].into(),
 				}),
 				Rc::new(Email {
 					subject: "Status update".into(),
@@ -139,26 +206,24 @@ impl EmailProvider {
 					body: EmailBody::text_only("All systems operational."),
 					sent_time: Local::now().with_timezone(&Utc)
 						- std::time::Duration::from_mins(45),
-					tags: vec!["Status system".to_string(), "Not important".to_string()],
+					folder_tags: [status_system_folder.uuid, not_important_folder.uuid].into(),
 				}),
 				Rc::new(Email {
-					subject: "Looooooooooooooooooooooooooooooooooooooooooooooooooooooooong".into(),
+					subject: "Very looooooooooong subject title, so long that i dont know what to write anymore...".into(),
 					author: "loooooong@example.com".into(),
 					body: EmailBody::html("<h1>Loooooong</h1> <br>".repeat(20)),
 					sent_time: Local::now().with_timezone(&Utc)
 						- std::time::Duration::from_hours(24 * 7),
-					tags: vec![],
+					folder_tags: [inbox_folder.uuid].into(),
 				}),
 				Rc::new(Email {
-					subject:
-						"Looooooooooooooooooooooooooooooooooooooooooooooooooooooooong but text only"
-							.into(),
+					subject: "Very looooooooooong subject title, so long that i dont know what to write anymore... (text only)".into(),
 					author: "loooooong@example.com".into(),
 					body: EmailBody::text_only("Loooooong\n".repeat(20)),
 					sent_time: Local::now().with_timezone(&Utc)
 						- std::time::Duration::from_hours(24 * 7)
 						- std::time::Duration::from_mins(5),
-					tags: vec![],
+					folder_tags: [inbox_folder.uuid].into(),
 				}),
 				Rc::new(Email {
 					subject: "Moodle: You have received feedback!".into(),
@@ -166,7 +231,7 @@ impl EmailProvider {
 					body: EmailBody::text_only("Look on the moodle website for feedback"),
 					sent_time: Local::now().with_timezone(&Utc)
 						- std::time::Duration::from_mins(120),
-					tags: vec!["Moodle".to_string()],
+					folder_tags: [moodle_folder.uuid].into(),
 				}),
 				Rc::new(Email {
 					subject: "New Login".into(),
@@ -176,14 +241,14 @@ impl EmailProvider {
 					),
 					sent_time: Local::now().with_timezone(&Utc)
 						- std::time::Duration::from_mins(10),
-					tags: vec!["Not important".to_string()],
+					folder_tags: [not_important_folder.uuid].into(),
 				}),
 				Rc::new(Email {
 					subject: "Something important from long ago...".to_string(),
 					author: "i dont know :/".to_string(),
 					body: EmailBody::text_only("i forgor :("),
 					sent_time: Local::now().with_timezone(&Utc) - chrono::TimeDelta::weeks(120),
-					tags: vec![],
+					folder_tags: HashSet::new(),
 				}),
 			]
 			.into_iter()

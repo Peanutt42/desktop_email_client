@@ -1,5 +1,5 @@
 use crate::{AppState, pretty_format_date_time};
-use desktop_email_client::{Email, EmailBody};
+use desktop_email_client::{Email, EmailAccount, EmailBody, EmailFolder, get_email_folder_by_uuid};
 use std::rc::Rc;
 use uuid::Uuid;
 use web_sys::HtmlInputElement;
@@ -86,20 +86,26 @@ fn EmailListItems() -> Html {
 				{
 					for (email_uuid, email) in email_account.provider.get_emails() {
 						if let Some(score) = email.match_search_pattern(search) {
-							search_results.push((score, *email_uuid, email.clone()));
+							search_results.push((
+								score,
+								*email_uuid,
+								email.clone(),
+								email_account.clone(),
+							));
 						}
 					}
 				}
 			}
 
 			// order by score descending
-			search_results.sort_by(|(a_score, _, _), (b_score, _, _)| b_score.cmp(a_score));
+			search_results.sort_by(|(a_score, _, _, _), (b_score, _, _, _)| b_score.cmp(a_score));
 
 			html! {
-				for (_score, email_uuid, email) in search_results {
+				for (_score, email_uuid, email, email_account) in search_results {
 					<EmailListItem
 						email={email}
 						email_uuid={email_uuid}
+						email_account={email_account}
 						selected={state.selected_email_uuid == Some(email_uuid)}
 					/>
 				}
@@ -114,20 +120,35 @@ fn EmailListItems() -> Html {
 					.is_selected(email_account_index as u32)
 				{
 					for (email_uuid, email) in email_account.provider.get_emails() {
-						search_results.push((*email_uuid, email.clone()));
+						let should_be_included = state
+							.selected_email_folder_uuid
+							.as_ref()
+							.map(|selected_email_folder_uuid| {
+								email.folder_tags.contains(selected_email_folder_uuid)
+							})
+							.unwrap_or(true);
+						if should_be_included {
+							search_results.push((
+								*email_uuid,
+								email.clone(),
+								email_account.clone(),
+							));
+						}
 					}
 				}
 			}
 
 			// order by time sent descending (latest to oldest)
-			search_results
-				.sort_by(|(_, email_a), (_, email_b)| email_b.sent_time.cmp(&email_a.sent_time));
+			search_results.sort_by(|(_, email_a, _), (_, email_b, _)| {
+				email_b.sent_time.cmp(&email_a.sent_time)
+			});
 
 			html! {
-				for (email_uuid, email) in search_results {
+				for (email_uuid, email, email_account) in search_results {
 					<EmailListItem
 						email={email}
 						email_uuid={email_uuid}
+						email_account={email_account}
 						selected={state.selected_email_uuid == Some(email_uuid)}
 					/>
 				}
@@ -144,7 +165,12 @@ fn EmailListItems() -> Html {
 
 #[autoprops]
 #[component]
-fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
+fn EmailListItem(
+	email: Rc<Email>,
+	email_uuid: &Uuid,
+	email_account: Rc<EmailAccount>,
+	selected: bool,
+) -> Html {
 	let classes = "p-[7px] rounded-[7px] border-2";
 	let selected_classes = format!("{} bg-[#555] border-transparent", classes);
 	let not_selected_classes = format!("{} border-[#222] hover:bg-[#222] cursor-pointer", classes);
@@ -174,20 +200,25 @@ fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
 			<div class="flex flex-row items-center gap-2 w-full">
 				<EmailAvatar />
 				<div class="font-semibold truncate">{ &email.subject }</div>
-				if !is_email_read {
-					<div class="bg-blue-500 w-2 h-2 rounded-full shrink-0"></div>
-				}
-				<div class="ml-auto text-xs text-muted-foreground" style="text-wrap: nowrap;">
-					{time_sent_ago_formatted}
-				</div>
 			</div>
 			if let EmailBody::TextOnly(body_text) = &email.body {
 				<small class="truncate nowrap block">{ body_text.clone() }</small>
 			}
-			<div class="flex flex-row gap-1">
-				for tag_name in email.tags.iter() {
-					<EmailTagBadge name={tag_name.clone()} />
+			<div class="flex flex-row items-center gap-1">
+				for folder_tag_uuid in email.folder_tags.iter() {
+					<EmailTagBadge name={
+						if let Some(EmailFolder { name, ..}) = get_email_folder_by_uuid(email_account.provider.get_folders(), *folder_tag_uuid) {
+							name.clone()
+						} else {
+							"<invalid>".to_string()
+						}
+					} />
 				}
+				<div class="flex-grow" />
+				<div class="ml-auto text-xs text-muted-foreground" style="margin: 0; text-wrap: nowrap;">
+					{time_sent_ago_formatted}
+				</div>
+				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if is_email_read {""} else {"bg-blue-500"})}></div>
 			</div>
 		</div>
 	}
@@ -197,7 +228,7 @@ fn EmailListItem(email: Rc<Email>, email_uuid: &Uuid, selected: bool) -> Html {
 #[component]
 fn EmailTagBadge(name: &AttrValue) -> Html {
 	html! {
-		<div class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-white text-black foreground shadow hover:bg-primary/80">
+		<div class="inline-flex items-center text-nowrap truncate rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-white text-black foreground shadow hover:bg-primary/80">
 			{name}
 		</div>
 	}
@@ -206,6 +237,6 @@ fn EmailTagBadge(name: &AttrValue) -> Html {
 #[component]
 fn EmailAvatar() -> Html {
 	html! {
-		<img src="https://www.w3schools.com/howto/img_avatar.png" class="w-[50px] h-[50px] align-middle rounded-full" />
+		<img src="/static/person-circle.svg" class="w-[35px] min-w-[35px] h-[35px] min-h-[35px] shrink-0 align-middle rounded-full" />
 	}
 }

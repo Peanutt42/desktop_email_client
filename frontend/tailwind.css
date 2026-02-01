@@ -6,6 +6,7 @@
 	:root {
 		--color-bg: hsl(240 10% 3.9%);
 		--color-fg: hsl(0 0% 98%);
+		--color-accent: hsl(240 3.7% 15.9%);
 		background-color: var(--color-bg);
 		color: var(--color-fg);
 	}

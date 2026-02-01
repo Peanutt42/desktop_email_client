@@ -14,12 +14,12 @@ pub fn pretty_format_date_time(date_time: &DateTime<Utc>) -> String {
 		let diff_days = diff.num_days();
 		match diff_days {
 			0 => format!(
-				"{}:{} today",
+				"{:02}:{:02} today",
 				date_time_naive.hour(),
 				date_time_naive.minute()
 			),
 			1 => format!(
-				"{}:{} yesterday",
+				"{:02}:{:02} yesterday",
 				date_time_naive.hour(),
 				date_time_naive.minute()
 			),
@@ -28,7 +28,7 @@ pub fn pretty_format_date_time(date_time: &DateTime<Utc>) -> String {
 				// TODO: support / register if to use DD.MM.YYYY or MM.DD.YYYY
 				if now.year() == date_time_naive_year {
 					format!(
-						"{}.{}., {}:{}",
+						"{}.{}., {:02}:{:02}",
 						date_time_naive.day(),
 						date_time_naive.month(),
 						date_time_naive.hour(),
@@ -36,7 +36,7 @@ pub fn pretty_format_date_time(date_time: &DateTime<Utc>) -> String {
 					)
 				} else if date_time_naive_year >= 2000 {
 					format!(
-						"{}.{}.{}, {}:{}",
+						"{}.{}.{}, {:02}:{:02}",
 						date_time_naive.day(),
 						date_time_naive.month(),
 						date_time_naive_year - 2000,
@@ -45,7 +45,7 @@ pub fn pretty_format_date_time(date_time: &DateTime<Utc>) -> String {
 					)
 				} else {
 					format!(
-						"{}.{}.{}, {}:{}",
+						"{}.{}.{}, {:02}:{:02}",
 						date_time_naive.day(),
 						date_time_naive.month(),
 						date_time_naive_year,

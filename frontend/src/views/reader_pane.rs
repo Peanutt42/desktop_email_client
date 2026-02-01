@@ -28,11 +28,11 @@ fn ReaderPaneContent() -> Html {
 			}
 
 			html! {
-				<p class="p-3 w-full h-full flex items-center justify-center">{ "Email not found" }</p>
+				<p class="p-3 w-full h-full flex items-center justify-center select-none">{ "Email not found" }</p>
 			}
 		}
 		None => {
-			html! { <p class="p-3 w-full h-full flex items-center justify-center">{ "Select an email" }</p> }
+			html! { <p class="p-3 w-full h-full flex items-center justify-center select-none">{ "Select an email" }</p> }
 		}
 	}
 }

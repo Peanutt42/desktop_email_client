@@ -10,7 +10,7 @@ pub fn EmailView(email: &Rc<Email>) -> Html {
 	html! {
 		<div class="flex flex-col w-full h-full">
 			<div class="border-b border-gray-300 p-2">
-				<div class="text-xl font-bold truncate">
+				<div class="text-xl font-bold break-normal">
 					{&email.subject}
 				</div>
 
@@ -38,7 +38,7 @@ pub fn EmailBodyView(email: &Rc<Email>) -> Html {
 		EmailBody::Html(html_body) => html! {
 			<iframe
 				class="bg-white w-full h-full border-0 rounded-[7px] box-border overflow-y-auto"
-				sandbox="true"
+				sandbox=""
 				srcdoc={html_body}
 			/>
 		},

@@ -61,6 +61,8 @@ pub struct AppState {
 	pub email_account_selection: EmailAccountSelection,
 	pub read_email_uuids: HashSet<Uuid>,
 	pub selected_email_uuid: Option<Uuid>,
+	/// None is implicit "All emails" folders
+	pub selected_email_folder_uuid: Option<Uuid>,
 	pub email_search_input: Option<AttrValue>,
 }
 impl AppState {
@@ -91,6 +93,7 @@ impl AppState {
 			email_account_selection: EmailAccountSelection::All,
 			read_email_uuids: HashSet::new(),
 			selected_email_uuid: None,
+			selected_email_folder_uuid: None,
 			email_search_input: None,
 		}
 	}
