@@ -1,4 +1,4 @@
-use desktop_email_client::EmailAccountSelection;
+use desktop_email_client_shared::EmailAccountSelection;
 use gloo::events::EventListener;
 use std::cell::RefCell;
 use web_sys::{wasm_bindgen::JsCast, window};
@@ -20,10 +20,12 @@ fn handle_keyboard_shortcut(
 		&& e.ctrl_key()
 		&& (1..=9).contains(&num)
 	{
+		// TODO: figure out how to fetch account count, since `get_email_account_count` is async
+		let email_accounts_count = 10; //get_email_account_count();
 		app_state.set(AppState {
 			email_account_selection: EmailAccountSelection::from_keyboard_shortcut(
 				num,
-				app_state.email_accounts.len() as u32,
+				email_accounts_count as u32,
 			),
 			..(**app_state).clone()
 		});

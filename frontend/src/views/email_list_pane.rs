@@ -1,9 +1,10 @@
 use crate::{AppState, pretty_format_date_time};
-use desktop_email_client::{Email, EmailAccount, EmailBody, EmailFolder, get_email_folder_by_uuid};
-use std::rc::Rc;
+use desktop_email_client_shared::{
+	Email, EmailBody, get_emails_in_folder, get_emails_matching_search, mark_email_read,
+};
 use uuid::Uuid;
 use web_sys::HtmlInputElement;
-use yew::prelude::*;
+use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
 
 #[autoprops]
@@ -76,122 +77,89 @@ fn EmailListItems() -> Html {
 	let state = use_context::<UseStateHandle<AppState>>().unwrap();
 
 	let items = match &state.email_search_input {
-		Some(search) => {
-			let mut search_results = vec![];
-
-			for (email_account_index, email_account) in state.email_accounts.iter().enumerate() {
-				if state
-					.email_account_selection
-					.is_selected(email_account_index as u32)
-				{
-					for (email_uuid, email) in email_account.provider.get_emails() {
-						if let Some(score) = email.match_search_pattern(search) {
-							search_results.push((
-								score,
-								*email_uuid,
-								email.clone(),
-								email_account.clone(),
-							));
-						}
-					}
-				}
-			}
-
-			// order by score descending
-			search_results.sort_by(|(a_score, _, _, _), (b_score, _, _, _)| b_score.cmp(a_score));
-
-			html! {
-				for (_score, email_uuid, email, email_account) in search_results {
-					<EmailListItem
-						email={email}
-						email_uuid={email_uuid}
-						email_account={email_account}
-						selected={state.selected_email_uuid == Some(email_uuid)}
-					/>
-				}
-			}
-		}
-		None => {
-			let mut search_results = vec![];
-
-			for (email_account_index, email_account) in state.email_accounts.iter().enumerate() {
-				if state
-					.email_account_selection
-					.is_selected(email_account_index as u32)
-				{
-					for (email_uuid, email) in email_account.provider.get_emails() {
-						let should_be_included = state
-							.selected_email_folder_uuid
-							.as_ref()
-							.map(|selected_email_folder_uuid| {
-								email.folder_tags.contains(selected_email_folder_uuid)
-							})
-							.unwrap_or(true);
-						if should_be_included {
-							search_results.push((
-								*email_uuid,
-								email.clone(),
-								email_account.clone(),
-							));
-						}
-					}
-				}
-			}
-
-			// order by time sent descending (latest to oldest)
-			search_results.sort_by(|(_, email_a, _), (_, email_b, _)| {
-				email_b.sent_time.cmp(&email_a.sent_time)
-			});
-
-			html! {
-				for (email_uuid, email, email_account) in search_results {
-					<EmailListItem
-						email={email}
-						email_uuid={email_uuid}
-						email_account={email_account}
-						selected={state.selected_email_uuid == Some(email_uuid)}
-					/>
-				}
-			}
-		}
+		Some(search) => html! {
+			<EmailMatchingSearchResultList search={search} />
+		},
+		None => html! {
+			<EmailListOfSelectedFolder />
+		},
 	};
 
 	html! {
-		<div class="flex flex-col overflow-y-auto gap-1.5 p-2 grow w-full">
-			{ items }
-		</div>
+		<Suspense>
+			<div class="flex flex-col overflow-y-auto gap-1.5 p-2 grow w-full">
+				{ items }
+			</div>
+		</Suspense>
 	}
 }
 
 #[autoprops]
 #[component]
-fn EmailListItem(
-	email: Rc<Email>,
-	email_uuid: &Uuid,
-	email_account: Rc<EmailAccount>,
-	selected: bool,
-) -> Html {
+fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
+	let state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let search_results = use_future_with((state.email_account_selection, search), |deps| {
+		let (email_account_selection, search) = &*deps;
+		get_emails_matching_search(*email_account_selection, search.to_string())
+	})?;
+
+	Ok(html! {
+		for search_result in search_results.iter() {
+			<EmailListItem
+				email={search_result.email.clone()}
+				email_uuid={search_result.email_uuid}
+				selected={state.selected_email_uuid == Some(search_result.email_uuid)}
+			/>
+		}
+	})
+}
+
+#[component]
+fn EmailListOfSelectedFolder() -> HtmlResult {
+	let state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let search_results = use_future_with(
+		(
+			state.email_account_selection,
+			state.selected_email_folder_uuid,
+		),
+		|deps| {
+			let (email_account_selection, selected_email_folder_uuid) = &*deps;
+			get_emails_in_folder(*email_account_selection, *selected_email_folder_uuid)
+		},
+	)?;
+
+	Ok(html! {
+		for search_result in search_results.iter() {
+			<EmailListItem
+				email={search_result.email.clone()}
+				email_uuid={search_result.email_uuid}
+				selected={state.selected_email_uuid == Some(search_result.email_uuid)}
+			/>
+		}
+	})
+}
+
+#[autoprops]
+#[component]
+fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult {
 	let classes = "p-[7px] rounded-[7px] border-2";
 	let selected_classes = format!("{} bg-[#555] border-transparent", classes);
 	let not_selected_classes = format!("{} border-[#222] hover:bg-[#222] cursor-pointer", classes);
 
 	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
 	let email_uuid = *email_uuid;
-	let is_email_read = app_state.read_email_uuids.contains(&email_uuid);
 	let on_click = move |_e| {
 		// TODO: wait a bit
-		let mut read_email_uuids = app_state.read_email_uuids.clone();
-		read_email_uuids.insert(email_uuid);
+		wasm_bindgen_futures::spawn_local(mark_email_read(email_uuid));
 
 		app_state.set(AppState {
 			selected_email_uuid: Some(email_uuid),
-			read_email_uuids,
 			..(*app_state).clone()
 		});
 	};
 	let time_sent_ago_formatted = pretty_format_date_time(&email.sent_time);
 
-	html! {
+	Ok(html! {
 		<div
 			key={format!("{}", email_uuid)}
 			class={if selected { selected_classes } else { not_selected_classes }}
@@ -205,23 +173,17 @@ fn EmailListItem(
 				<small class="truncate nowrap block">{ body_text.clone() }</small>
 			}
 			<div class="flex flex-row items-center gap-1">
-				for folder_tag_uuid in email.folder_tags.iter() {
-					<EmailTagBadge name={
-						if let Some(EmailFolder { name, ..}) = get_email_folder_by_uuid(email_account.provider.get_folders(), *folder_tag_uuid) {
-							name.clone()
-						} else {
-							"<invalid>".to_string()
-						}
-					} />
+				for tag_name in email.tags.iter() {
+					<EmailTagBadge name={tag_name.clone()} />
 				}
 				<div class="flex-grow" />
 				<div class="ml-auto text-xs text-muted-foreground" style="margin: 0; text-wrap: nowrap;">
 					{time_sent_ago_formatted}
 				</div>
-				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if is_email_read {""} else {"bg-blue-500"})}></div>
+				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if email.read {""} else {"bg-blue-500"})}></div>
 			</div>
 		</div>
-	}
+	})
 }
 
 #[autoprops]

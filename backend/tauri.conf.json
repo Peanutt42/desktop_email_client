@@ -6,17 +6,20 @@
 	"build": {
 		"frontendDist": "../frontend/dist",
 		"beforeDevCommand": "cd frontend && trunk watch",
-		"beforeBuildCommand": "cd frontend && trunk build"
+		"beforeBuildCommand": "cd frontend && trunk build --release",
+		"beforeBundleCommand": "cd frontend && trunk build --release"
 	},
 	"app": {
 		"withGlobalTauri": true,
 		"windows": [
 			{
 				"title": "Email Client",
-				"width": 800,
-				"height": 600,
+				"width": 1600,
+				"height": 1000,
 				"resizable": true,
-				"fullscreen": false
+				"fullscreen": false,
+				"backgroundColor": "#09090B",
+				"decorations": true
 			}
 		],
 		"security": {

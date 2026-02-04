@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-desktop_email_client = { path = "../" }
+desktop_email_client_shared = { path = "../shared", features = ["frontend"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
 tracing = { workspace = true }
@@ -21,3 +21,6 @@ stylist = { version = "0.11", features = [
 	"parser",
 ] }
 yew-hooks = "0.4.0"
+wasm-bindgen-futures = { workspace = true }
+serde = { workspace = true }
+pollster = "0.4.0"

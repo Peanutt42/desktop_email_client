@@ -1,19 +1,26 @@
-use desktop_email_client::{EmailAccountSelection, EmailFolder};
+use desktop_email_client_shared::{
+	EmailAccountSelection, EmailFolder, get_email_accounts, get_email_folders,
+};
 use uuid::Uuid;
 use web_sys::HtmlInputElement;
-use yew::prelude::*;
+use yew::{
+	prelude::*,
+	suspense::{use_future, use_future_with},
+};
 use yew_autoprops::autoprops;
 
 use crate::AppState;
 
 #[component]
-pub fn EmailFolderPane() -> Html {
+pub fn EmailFolderPane() -> HtmlResult {
 	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
+
+	let email_accounts = use_future(get_email_accounts)?;
 
 	let email_account_name_styling =
 		"text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none;";
 
-	html! {
+	Ok(html! {
 		<div class="w-full p-10px flex flex-col" style="height: inherit">
 			<EmailAccountSelector />
 
@@ -25,7 +32,7 @@ pub fn EmailFolderPane() -> Html {
 					app_state={app_state.clone()}
 				/>
 
-				for (i, email_account) in app_state.email_accounts.iter().enumerate() {
+				for (i, email_account) in email_accounts.iter().enumerate() {
 					if app_state.email_account_selection.is_selected(i as u32) {
 						if app_state.email_account_selection.all_selected() {
 							<div class="w-full h-px mt-[5px] mb-[5px] bg-[#555]" />
@@ -39,25 +46,42 @@ pub fn EmailFolderPane() -> Html {
 							</div>
 						}
 
-						for folder in email_account.provider.get_folders() {
-							// TODO: email_count!
-							<FullEmailFolderView
-								folder={folder.clone()}
-								count=42
-								app_state={app_state.clone()}
-							/>
-						}
+						<EmailFolders email_account_index={i} />
 					}
 				}
 			</div>
 		</div>
-	}
+	})
+}
+
+#[autoprops]
+#[component]
+fn EmailFolders(email_account_index: usize) -> HtmlResult {
+	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let folders = use_future_with(email_account_index, |email_account_index| {
+		get_email_folders(*email_account_index)
+	})?;
+
+	Ok(html! {
+		<div>
+			for folder in folders.iter() {
+				// TODO: email_count!
+				<FullEmailFolderView
+					folder={folder.clone()}
+					count=42
+					app_state={app_state.clone()}
+				/>
+			}
+		</div>
+	})
 }
 
 // TODO: make generic enum UI
 #[component]
-fn EmailAccountSelector() -> Html {
+fn EmailAccountSelector() -> HtmlResult {
 	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
+
+	let email_accounts = use_future(get_email_accounts)?;
 
 	let all_selected = app_state.email_account_selection.all_selected();
 	let is_email_account_index_selected = |email_account_index| matches!(&app_state.email_account_selection, EmailAccountSelection::Single{ index } if *index == email_account_index as u32);
@@ -89,7 +113,7 @@ fn EmailAccountSelector() -> Html {
 		}
 	};
 
-	html! {
+	Ok(html! {
 		<div class="p-[15px]">
 
 			<select
@@ -103,7 +127,7 @@ fn EmailAccountSelector() -> Html {
 					<div class="no-select">{"All accounts"}</div>
 				</option>
 
-				for (email_account_index, email_account) in app_state.email_accounts.iter().enumerate() {
+				for (email_account_index, email_account) in email_accounts.iter().enumerate() {
 					<option
 						value={format!("{}", email_account_index)}
 						selected={is_email_account_index_selected(email_account_index)}
@@ -114,7 +138,7 @@ fn EmailAccountSelector() -> Html {
 			</select>
 
 		</div>
-	}
+	})
 }
 
 #[autoprops]
@@ -125,8 +149,7 @@ fn FullEmailFolderView(
 	app_state: &UseStateHandle<AppState>,
 ) -> Html {
 	html! {
-		<div>
-
+		<div class="flex flex-col gap-1">
 			<EmailFolderView
 				folder_name={folder.name.clone()}
 				on_select_folder_uuid={Some(folder.uuid)}
@@ -134,20 +157,19 @@ fn FullEmailFolderView(
 				app_state={app_state.clone()}
 			/>
 
-			// TODO: make collapsable and add vertical line to guide eye with indentation like in code editors
-			<div class="flex flex-col pl-[30px] gap-1">
-				if !folder.subfolders.is_empty() {
-					<div class="pt-[0.25rem]" />
-				}
-				for subfolder in folder.subfolders.iter() {
-					// TODO: folder email count
-					<FullEmailFolderView
-						folder={subfolder.clone()}
-						count={42}
-						app_state={app_state.clone()}
-					/>
-				}
-			</div>
+			if !folder.subfolders.is_empty() {
+				// TODO: make collapsable and add vertical line to guide eye with indentation like in code editors
+				<div class="flex flex-col pl-[30px] gap-1">
+					for subfolder in folder.subfolders.iter() {
+						// TODO: folder email count
+						<FullEmailFolderView
+							folder={subfolder.clone()}
+							count={42}
+							app_state={app_state.clone()}
+						/>
+					}
+				</div>
+			}
 		</div>
 	}
 }

@@ -1,0 +1,22 @@
+[package]
+name = "desktop_email_client_shared"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+uuid = { workspace = true }
+yew-router = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+tracing-serde = { workspace = true }
+tracing-subscriber = { workspace = true }
+fuzzy-matcher = "0.3.7"
+wasm-bindgen = { workspace = true, optional = true }
+wasm-bindgen-futures = { workspace = true, optional = true }
+serde-wasm-bindgen = { workspace = true, optional = true }
+
+[features]
+default = []
+frontend = ["wasm-bindgen", "wasm-bindgen-futures", "serde-wasm-bindgen"]
+backend = []

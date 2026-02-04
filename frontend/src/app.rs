@@ -1,21 +1,21 @@
-use std::{collections::HashSet, rc::Rc};
-
 use crate::{
 	KeyboardShortcutListener,
 	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
 };
-use desktop_email_client::{EmailAccount, EmailAccountSelection, EmailProvider};
+use desktop_email_client_shared::EmailAccountSelection;
 use uuid::Uuid;
 use yew::prelude::*;
 
 #[component]
 pub fn App() -> Html {
-	let app_state = use_state(AppState::create_mock);
+	let app_state = use_state(AppState::default);
 
 	let email_searchbar_input_ref = NodeRef::default();
 
 	let email_folder_pane = html! {
-		<EmailFolderPane />
+		<Suspense>
+			<EmailFolderPane />
+		</Suspense>
 	};
 
 	let email_list_pane = html! {
@@ -57,41 +57,16 @@ pub fn App() -> Html {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
-	pub email_accounts: Vec<Rc<EmailAccount>>,
 	pub email_account_selection: EmailAccountSelection,
-	pub read_email_uuids: HashSet<Uuid>,
 	pub selected_email_uuid: Option<Uuid>,
 	/// None is implicit "All emails" folders
 	pub selected_email_folder_uuid: Option<Uuid>,
 	pub email_search_input: Option<AttrValue>,
 }
-impl AppState {
-	pub fn create_mock() -> Self {
+impl Default for AppState {
+	fn default() -> Self {
 		Self {
-			email_accounts: vec![
-				Rc::new(EmailAccount::new(
-					"Account 1".to_string(),
-					"account1@example.com".to_string(),
-					EmailProvider::create_mock(),
-				)),
-				Rc::new(EmailAccount::new(
-					"Account 2".to_string(),
-					"account2@example.com".to_string(),
-					EmailProvider::create_mock(),
-				)),
-				Rc::new(EmailAccount::new(
-					"Account 3".to_string(),
-					"account3@example.com".to_string(),
-					EmailProvider::create_mock(),
-				)),
-				Rc::new(EmailAccount::new(
-					"Account 4".to_string(),
-					"account4@example.com".to_string(),
-					EmailProvider::create_mock(),
-				)),
-			],
 			email_account_selection: EmailAccountSelection::All,
-			read_email_uuids: HashSet::new(),
 			selected_email_uuid: None,
 			selected_email_folder_uuid: None,
 			email_search_input: None,
