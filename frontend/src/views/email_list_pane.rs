@@ -77,10 +77,10 @@ fn EmailListItems() -> Html {
 	let state = use_context::<UseStateHandle<AppState>>().unwrap();
 
 	let items = match &state.email_search_input {
-		Some(search) => html! {
+		Some(search) if !search.is_empty() => html! {
 			<EmailMatchingSearchResultList search={search} />
 		},
-		None => html! {
+		_ => html! {
 			<EmailListOfSelectedFolder />
 		},
 	};
