@@ -4,10 +4,7 @@ use std::{
 };
 
 use chrono::{Local, Utc};
-use desktop_email_client_shared::{
-	BackendApi, Email, EmailAccount, EmailAccountSelection, EmailBody, EmailFolder,
-	EmailSearchResult,
-};
+use desktop_email_client_shared::{Email, EmailAccount, EmailBody, EmailFolder, EmailSearchResult};
 use uuid::Uuid;
 
 struct EmailProvider {
@@ -29,12 +26,12 @@ pub struct Backend {
 	email_providers: Vec<EmailProvider>,
 	emails: RwLock<HashMap<Uuid, Email>>,
 }
-impl BackendApi for Backend {
-	fn get_email_account_count(&self) -> usize {
-		self.email_providers.len()
+impl Backend {
+	pub fn get_email_account_count(&self, _: ()) -> u64 {
+		self.email_providers.len() as u64
 	}
 
-	fn get_email_accounts(&self) -> Vec<EmailAccount> {
+	pub fn get_email_accounts(&self, _: ()) -> Vec<EmailAccount> {
 		self.email_providers
 			.iter()
 			.map(|provider| provider.account.clone())
@@ -42,40 +39,28 @@ impl BackendApi for Backend {
 	}
 
 	/// returns empty Vec when index invalid
-	fn get_email_folders(&self, email_account_index: usize) -> Vec<EmailFolder> {
+	pub fn get_email_folders(&self, email_account_index: u64) -> Vec<EmailFolder> {
 		self.email_providers
-			.get(email_account_index)
+			.get(email_account_index as usize)
 			.map(|provider| provider.folders.clone())
 			.unwrap_or_default()
 	}
 
-	fn get_emails_in_folder(
-		&self,
-		email_account_selection: EmailAccountSelection,
-		email_folder_uuid: Option<Uuid>,
-	) -> Vec<EmailSearchResult> {
+	pub fn get_emails_in_folder(&self, email_folder_uuid: Option<Uuid>) -> Vec<EmailSearchResult> {
 		let mut search_results = vec![];
 
-		for (email_account_index, provider) in self.email_providers.iter().enumerate() {
-			if !email_account_selection.is_selected(email_account_index as u32) {
-				continue;
-			}
+		let emails = self.emails.read().unwrap();
 
-			for email_uuid in &provider.email_uuids {
-				if let Some(email) = self.emails.read().unwrap().get(email_uuid) {
-					let should_be_included = email_folder_uuid
-						.as_ref()
-						.map(|selected_email_folder_uuid| {
-							email.folder_uuid == *selected_email_folder_uuid
-						})
-						.unwrap_or(true);
-					if should_be_included {
-						search_results.push(EmailSearchResult {
-							email_uuid: *email_uuid,
-							email: email.clone(),
-						});
-					}
-				}
+		for (email_uuid, email) in emails.iter() {
+			let should_be_included = email_folder_uuid
+				.as_ref()
+				.map(|selected_email_folder_uuid| email.folder_uuid == *selected_email_folder_uuid)
+				.unwrap_or(true);
+			if should_be_included {
+				search_results.push(EmailSearchResult {
+					email_uuid: *email_uuid,
+					email: email.clone(),
+				});
 			}
 		}
 
@@ -89,21 +74,15 @@ impl BackendApi for Backend {
 		search_results
 	}
 
-	fn get_emails_matching_search(
-		&self,
-		email_account_selection: EmailAccountSelection,
-		search: String,
-	) -> Vec<EmailSearchResult> {
+	pub fn get_emails_matching_search(&self, search: String) -> Vec<EmailSearchResult> {
 		let mut search_results: Vec<(i64, Uuid, Email)> = vec![];
 
-		for (email_account_index, provider) in self.email_providers.iter().enumerate() {
-			if email_account_selection.is_selected(email_account_index as u32) {
-				for email_uuid in &provider.email_uuids {
-					if let Some(email) = self.emails.read().unwrap().get(email_uuid)
-						&& let Some(score) = email.match_search_pattern(&search)
-					{
-						search_results.push((score, *email_uuid, email.clone()));
-					}
+		for provider in self.email_providers.iter() {
+			for email_uuid in &provider.email_uuids {
+				if let Some(email) = self.emails.read().unwrap().get(email_uuid)
+					&& let Some(score) = email.match_search_pattern(&search)
+				{
+					search_results.push((score, *email_uuid, email.clone()));
 				}
 			}
 		}
@@ -117,22 +96,21 @@ impl BackendApi for Backend {
 			.collect::<Vec<_>>()
 	}
 
-	fn get_email(&self, email_uuid: Uuid) -> Option<Email> {
+	pub fn get_email(&self, email_uuid: Uuid) -> Option<Email> {
 		self.emails.read().unwrap().get(&email_uuid).cloned()
 	}
 
-	fn mark_email_read(&self, email_uuid: Uuid) {
+	pub fn mark_email_read(&self, email_uuid: Uuid) {
 		if let Some(email) = self.emails.write().unwrap().get_mut(&email_uuid) {
 			email.read = true;
 		}
 	}
-}
-impl Backend {
+
 	pub fn create_mock() -> Self {
 		let mut all_emails = HashMap::new();
 		let mut email_providers = Vec::new();
 
-		for i in 0..5 {
+		for i in 0..3 {
 			let (email_folders, emails) = create_mock_emails();
 			email_providers.push(EmailProvider::new(
 				EmailAccount::new(

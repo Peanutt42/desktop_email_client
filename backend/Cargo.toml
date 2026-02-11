@@ -2,19 +2,31 @@
 name = "desktop_email_client_backend"
 version = "0.1.0"
 edition = "2024"
+default-run = "desktop_email_client"
 
 [[bin]]
 name = "desktop_email_client"
 path = "src/main.rs"
 
+[[bin]]
+name = "non_ipc_backend"
+path = "src/developing/non_ipc_backend.rs"
+required-features = ["non_ipc_backend"]
+
 [dependencies]
-desktop_email_client_shared = { path = "../shared", features = ["backend"] }
+desktop_email_client_shared = { path = "../shared" }
 tauri = { version = "2.9.5", features = ["tracing"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 fuzzy-matcher = "0.3.7"
 uuid = { workspace = true }
 chrono = { workspace = true }
+actix-web = { version = "4", optional = true }
+actix-cors = { version = "0.7.1", optional = true }
 
 [build-dependencies]
 tauri-build = { version = "2.5.3", features = [] }
+
+[features]
+default = []
+non_ipc_backend = ["actix-web", "actix-cors"]

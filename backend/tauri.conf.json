@@ -1,6 +1,6 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "desktop_email_client",
+	"productName": "Desktop Email Client",
 	"version": "0.1.0",
 	"identifier": "com.github.p3anutt42.desktop-email-client",
 	"build": {
@@ -13,7 +13,7 @@
 		"withGlobalTauri": true,
 		"windows": [
 			{
-				"title": "Email Client",
+				"title": "Desktop Email Client",
 				"width": 1600,
 				"height": 1000,
 				"resizable": true,
@@ -39,7 +39,7 @@
 		"resources": [],
 		"externalBin": [],
 		"copyright": "",
-		"shortDescription": "",
+		"shortDescription": "Desktop Email Client",
 		"longDescription": "",
 		"linux": {
 			"appimage": {

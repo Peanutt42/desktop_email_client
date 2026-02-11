@@ -1,13 +1,12 @@
-use desktop_email_client_shared::get_email;
 use uuid::Uuid;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
 
-use crate::{AppState, views::EmailView};
+use crate::{api::get_email, use_app_state, views::EmailView};
 
 #[component]
 pub fn ReaderPane() -> Html {
-	let state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let state = use_app_state();
 
 	let content = match &state.selected_email_uuid {
 		Some(email_uuid) => html! {

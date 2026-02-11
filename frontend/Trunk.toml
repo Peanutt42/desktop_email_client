@@ -1,0 +1,4 @@
+# only used with the `non_ipc_backend` feature enabled
+[[proxy]]
+rewrite = "/non_ipc_api"
+backend = "http://localhost:4242/non_ipc_api"

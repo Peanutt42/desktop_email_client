@@ -1,35 +1,33 @@
-use crate::{AppState, pretty_format_date_time};
-use desktop_email_client_shared::{
-	Email, EmailBody, get_emails_in_folder, get_emails_matching_search, mark_email_read,
+use crate::{
+	AppState,
+	api::{get_emails_in_folder, get_emails_matching_search, mark_email_read},
+	pretty_format_date_time, use_app_state,
 };
+use desktop_email_client_shared::{Email, EmailBody};
 use uuid::Uuid;
 use web_sys::HtmlInputElement;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
 
-#[autoprops]
 #[component]
-pub fn EmailListPane(email_searchbar_input_ref: &NodeRef) -> Html {
+pub fn EmailListPane() -> Html {
 	html! {
 		<ul class="w-full flex flex-col select-none" style="height: inherit">
-			<EmailSearchbar email_searchbar_input_ref={email_searchbar_input_ref} />
+			<EmailSearchbar />
 
 			<EmailListItems />
 		</ul>
 	}
 }
 
-pub fn focus_email_searchbar_input(email_searchbar_input_ref: &NodeRef) {
-	if let Some(input) = email_searchbar_input_ref.cast::<HtmlInputElement>() {
-		input.focus().unwrap();
-	}
-}
-
-#[autoprops]
 #[component]
-fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
+fn EmailSearchbar() -> Html {
+	let app_state = use_app_state();
+
+	let email_searchbar_input_ref = use_node_ref();
+
 	let on_searchbar_input = {
-		let state = use_context::<UseStateHandle<AppState>>().unwrap();
+		let state = use_app_state();
 		let searchbar_element = email_searchbar_input_ref.clone();
 
 		move |_e| {
@@ -45,8 +43,25 @@ fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
 		}
 	};
 
+	let display_class = classes!(if app_state.show_email_searchbar {
+		"block"
+	} else {
+		"hidden"
+	});
+
+	// autofocus when showing the searchbar
+	{
+		let email_searchbar_input_ref = email_searchbar_input_ref.clone();
+		use_effect_with(app_state.show_email_searchbar, move |_| {
+			if let Some(input) = email_searchbar_input_ref.cast::<HtmlInputElement>() {
+				let _ = input.focus();
+			}
+			|| ()
+		});
+	}
+
 	html! {
-		<div class="bg-background/95 p-4">
+		<div class={classes!("bg-background/95", "p-4", display_class)}>
 			<div class="relative">
 				<svg class="lucide lucide-search absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
 					width="24"
@@ -56,7 +71,7 @@ fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
 					stroke-linecap="round"
 					stroke-linejoin="round"
 				>
-					<image href="/static/search.svg" />
+					<image href="/static/icons/search.svg" />
 				</svg>
 
 				<input
@@ -65,7 +80,7 @@ fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
 					placeholder="Search"
 					type="search"
 					name="search"
-					 oninput={on_searchbar_input}
+					oninput={on_searchbar_input}
 				/>
 			</div>
 		</div>
@@ -74,7 +89,7 @@ fn EmailSearchbar(email_searchbar_input_ref: &NodeRef) -> Html {
 
 #[component]
 fn EmailListItems() -> Html {
-	let state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let state = use_app_state();
 
 	let items = match &state.email_search_input {
 		Some(search) if !search.is_empty() => html! {
@@ -97,10 +112,9 @@ fn EmailListItems() -> Html {
 #[autoprops]
 #[component]
 fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
-	let state = use_context::<UseStateHandle<AppState>>().unwrap();
-	let search_results = use_future_with((state.email_account_selection, search), |deps| {
-		let (email_account_selection, search) = &*deps;
-		get_emails_matching_search(*email_account_selection, search.to_string())
+	let state = use_app_state();
+	let search_results = use_future_with(search, |search| {
+		get_emails_matching_search(search.to_string())
 	})?;
 
 	Ok(html! {
@@ -116,16 +130,10 @@ fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
 
 #[component]
 fn EmailListOfSelectedFolder() -> HtmlResult {
-	let state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let state = use_app_state();
 	let search_results = use_future_with(
-		(
-			state.email_account_selection,
-			state.selected_email_folder_uuid,
-		),
-		|deps| {
-			let (email_account_selection, selected_email_folder_uuid) = &*deps;
-			get_emails_in_folder(*email_account_selection, *selected_email_folder_uuid)
-		},
+		state.selected_email_folder_uuid,
+		|selected_email_folder_uuid| get_emails_in_folder(*selected_email_folder_uuid),
 	)?;
 
 	Ok(html! {
@@ -146,7 +154,7 @@ fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult
 	let selected_classes = format!("{} bg-[#555] border-transparent", classes);
 	let not_selected_classes = format!("{} border-[#222] hover:bg-[#222] cursor-pointer", classes);
 
-	let app_state = use_context::<UseStateHandle<AppState>>().unwrap();
+	let app_state = use_app_state();
 	let email_uuid = *email_uuid;
 	let on_click = move |_e| {
 		// TODO: wait a bit
@@ -177,9 +185,9 @@ fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult
 					<EmailTagBadge name={tag_name.clone()} />
 				}
 				<div class="flex-grow" />
-				<div class="ml-auto text-xs text-muted-foreground" style="margin: 0; text-wrap: nowrap;">
+				<small class="ml-auto text-xs text-gray-100 font-thin" style="margin: 0; text-wrap: nowrap;">
 					{time_sent_ago_formatted}
-				</div>
+				</small>
 				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if email.read {""} else {"bg-blue-500"})}></div>
 			</div>
 		</div>
@@ -199,6 +207,6 @@ fn EmailTagBadge(name: &AttrValue) -> Html {
 #[component]
 fn EmailAvatar() -> Html {
 	html! {
-		<img src="/static/person-circle.svg" class="w-[35px] min-w-[35px] h-[35px] min-h-[35px] shrink-0 align-middle rounded-full" />
+		<img src="/static/icons/person-circle.svg" class="w-[35px] min-w-[35px] h-[35px] min-h-[35px] shrink-0 align-middle rounded-full" />
 	}
 }

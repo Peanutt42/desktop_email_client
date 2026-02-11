@@ -2,15 +2,12 @@ use crate::{
 	KeyboardShortcutListener,
 	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
 };
-use desktop_email_client_shared::EmailAccountSelection;
 use uuid::Uuid;
 use yew::prelude::*;
 
 #[component]
 pub fn App() -> Html {
 	let app_state = use_state(AppState::default);
-
-	let email_searchbar_input_ref = NodeRef::default();
 
 	let email_folder_pane = html! {
 		<Suspense>
@@ -19,9 +16,7 @@ pub fn App() -> Html {
 	};
 
 	let email_list_pane = html! {
-		<EmailListPane
-			email_searchbar_input_ref={&email_searchbar_input_ref}
-		/>
+		<EmailListPane />
 	};
 
 	let reader_pane = html! {
@@ -49,27 +44,31 @@ pub fn App() -> Html {
 					left={email_folder_pane}
 					right={main_pane}
 				/>
-				<KeyboardShortcutListener email_searchbar_input_ref={email_searchbar_input_ref} app_state={app_state} />
+				<KeyboardShortcutListener app_state={app_state} />
 			</ContextProvider<UseStateHandle<AppState>>>
 		</main>
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
-	pub email_account_selection: EmailAccountSelection,
 	pub selected_email_uuid: Option<Uuid>,
 	/// None is implicit "All emails" folders
 	pub selected_email_folder_uuid: Option<Uuid>,
 	pub email_search_input: Option<AttrValue>,
+	pub show_email_searchbar: bool,
 }
-impl Default for AppState {
-	fn default() -> Self {
+impl AppState {
+	pub fn set_show_email_searchbar(self, show_email_searchbar: bool) -> Self {
 		Self {
-			email_account_selection: EmailAccountSelection::All,
-			selected_email_uuid: None,
-			selected_email_folder_uuid: None,
-			email_search_input: None,
+			show_email_searchbar,
+			..self
 		}
 	}
+}
+
+#[hook]
+pub fn use_app_state() -> UseStateHandle<AppState> {
+	use_context::<UseStateHandle<AppState>>()
+		.expect("no AppState context provided, missing a <ContextProvider /> above this component")
 }

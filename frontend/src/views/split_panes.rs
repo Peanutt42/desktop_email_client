@@ -271,16 +271,18 @@ pub fn SplitPanes(props: &Props) -> Html {
 			<div class={format!("panel {}", left_css.get_class_name())} id={first_id}>
 				{ first_html }
 			</div>
+
 			<div
 				id={drag_id}
 				ref={drag_area}
-				class="drag"
-				style={format!("cursor:{}; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", cursor_style, drag_area_width, drag_area_height, props.axis.flex_dir())}
+				class="drag group relative z-10 bg-[#555]"
+				style={format!("cursor:{}; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", cursor_style, drag_line_width, drag_line_height, props.axis.flex_dir())}
 			>
-				<div class="bg-[#555]" style={format!("width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", drag_line_width, drag_line_height, props.axis.flex_dir())}>
+				<div style={format!("position: absolute; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", drag_area_width, drag_area_height, props.axis.flex_dir())}>
 					<div style={format!("width: {}; height: {};", drag_area_width, drag_area_height)} />
 				</div>
 			</div>
+
 			<div class={format!("panel {}", right_css.get_class_name())} style="width: 100%" id={second_id}>
 				{ second_html }
 			</div>
