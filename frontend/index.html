@@ -1,9 +1,15 @@
 <!doctype html>
-<html>
+<html data-theme="halloween">
 	<head>
 		<meta charset="utf-8" />
 		<title>Desktop Email Client</title>
-		<link data-trunk rel="rust" data-wasm-opt="z" />
+		<link
+			data-trunk
+			rel="rust"
+			data-wasm-opt="z"
+			href="Cargo.toml"
+			data-bin="desktop_email_client_frontend"
+		/>
 		<link data-trunk rel="copy-dir" href="static" />
 		<link data-trunk rel="tailwind-css" href="tailwind.css" />
 		<link

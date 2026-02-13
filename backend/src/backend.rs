@@ -145,7 +145,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 	let emails = [
 		Email {
 			subject: "Hello".into(),
-			author: "alice@example.com".into(),
+			author: EmailAccount::new("Alice".to_string(), "alice@example.com".to_string()),
 			body: EmailBody::text_only("Hello from Alice"),
 			sent_time: Local::now().with_timezone(&Utc) - std::time::Duration::from_mins(1),
 			read: false,
@@ -154,7 +154,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "Status update".into(),
-			author: "bob@example.com".into(),
+			author: EmailAccount::new("Bob".to_string(),"bob@example.com".to_string()),
 			body: EmailBody::text_only("All systems operational."),
 			sent_time: Local::now().with_timezone(&Utc)
 				- std::time::Duration::from_mins(45),
@@ -164,7 +164,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "Very looooooooooong subject title, so long that i dont know what to write anymore...".into(),
-			author: "loooooong@example.com".into(),
+			author: EmailAccount::new("Loooooong".to_string(), "loooooong@example.com".to_string()),
 			body: EmailBody::html("<h1>Loooooong</h1> <br>".repeat(20)),
 			sent_time: Local::now().with_timezone(&Utc)
 				- std::time::Duration::from_hours(24 * 7),
@@ -174,7 +174,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "Very looooooooooong subject title, so long that i dont know what to write anymore... (text only)".into(),
-			author: "loooooong@example.com".into(),
+			author: EmailAccount::new("Loooooong".to_string(), "loooooong@example.com".to_string()),
 			body: EmailBody::text_only("Loooooong\n".repeat(20)),
 			sent_time: Local::now().with_timezone(&Utc)
 				- std::time::Duration::from_hours(24 * 7)
@@ -185,7 +185,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "Moodle: You have received feedback!".into(),
-			author: "noreply@moodle.com".into(),
+			author: EmailAccount::new("Noreply".to_string(), "noreply@moodle.com".to_string()),
 			body: EmailBody::text_only("Look on the moodle website for feedback"),
 			sent_time: Local::now().with_timezone(&Utc)
 				- std::time::Duration::from_mins(120),
@@ -195,7 +195,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "New Login".into(),
-			author: "noreply@bitwarden.com".into(),
+			author: EmailAccount::new("Noreply".to_string(), "noreply@bitwarden.com".to_string()),
 			body: EmailBody::text_only(
 				"A new device has logged into your bitwarden account!",
 			),
@@ -207,7 +207,7 @@ fn create_mock_emails() -> (Vec<EmailFolder>, HashMap<Uuid, Email>) {
 		},
 		Email {
 			subject: "Something important from long ago...".to_string(),
-			author: "i dont know :/".to_string(),
+			author: EmailAccount::new("i dont know".to_string(), "i dont know :/".to_string()),
 			body: EmailBody::text_only("i forgor :("),
 			sent_time: Local::now().with_timezone(&Utc) - chrono::TimeDelta::weeks(120),
 			read: false,

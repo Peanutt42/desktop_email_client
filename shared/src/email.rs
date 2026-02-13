@@ -20,7 +20,7 @@ impl EmailBody {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Email {
 	pub subject: String,
-	pub author: String,
+	pub author: EmailAccount,
 	pub body: EmailBody,
 	pub sent_time: DateTime<Utc>,
 	pub read: bool,

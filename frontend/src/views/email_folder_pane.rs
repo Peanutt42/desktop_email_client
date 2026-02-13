@@ -1,5 +1,4 @@
 use desktop_email_client_shared::EmailFolder;
-use tailyew::{Button, ButtonType, Image};
 use uuid::Uuid;
 use yew::{
 	prelude::*,
@@ -19,11 +18,10 @@ pub fn EmailFolderPane() -> HtmlResult {
 
 	let email_accounts = use_future(|| get_email_accounts(()))?;
 
-	let email_account_name_styling =
-		"text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none;";
+	let email_account_name_styling = "text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none; font-size: var(--font-base);";
 
 	Ok(html! {
-		<div class="w-full p-10px flex flex-col bg-[#232323]" style="height: inherit">
+		<div class="w-full p-10px flex flex-col" style="height: inherit">
 			<div class="flex flex-col overflow-y-auto grow p-[15px] gap-1">
 				<div class="flex flex-row gap-2">
 					<EmailFolderView
@@ -37,17 +35,18 @@ pub fn EmailFolderPane() -> HtmlResult {
 				</div>
 
 				for (i, email_account) in email_accounts.iter().enumerate() {
-					<div class="w-full h-px mt-[5px] mb-[5px] bg-[#555]" />
-
-					<div class="pt-5px pb-5px flex flex-row">
-						<div style={email_account_name_styling}>{format!("{} (", email_account.name)}</div>
-						<div style={email_account_name_styling} class="truncate">
-							{&email_account.address}
+					<details open=true class="collapse collapse-arrow shrink-0">
+						<summary class="collapse-title text-base pt-[5px] pb-[5px] flex flex-row">
+							<div style={email_account_name_styling}>{format!("{} (", email_account.name)}</div>
+							<div style={email_account_name_styling} class="truncate">
+								{&email_account.address}
+							</div>
+							<div style={email_account_name_styling}>{")"}</div>
+						</summary>
+						<div class="collapse-content">
+							<EmailFolders email_account_index={i} />
 						</div>
-						<div style={email_account_name_styling}>{")"}</div>
-					</div>
-
-					<EmailFolders email_account_index={i} />
+					</details>
 				}
 			</div>
 		</div>
@@ -69,20 +68,21 @@ fn ToggleEmailSearchbarButton() -> Html {
 		}
 	};
 
-	let background_class = if app_state.show_email_searchbar {
-		Some(classes!("bg-[#555]"))
+	let bg_color_class = if app_state.show_email_searchbar {
+		Some(classes!("bg-accent"))
 	} else {
 		None
 	};
 
 	html! {
-		<Button
-			button_type={ButtonType::Icon}
-			on_click={on_toggle_searchbar}
-			class={classes!("rounded-md", "w-8", "h-8", "flex", "justify-center", "items-center", "shrink-0", background_class)}
-		>
-			<Image src="/static/icons/search.svg" width="16px" height="16px" />
-		</Button>
+		<div class="tooltip tooltip-bottom" data-tip="Search">
+			<button
+				onclick={on_toggle_searchbar}
+				class={classes!("btn", "btn-square", "btn-ghost", "hover:bg-accent", bg_color_class)}
+			>
+				<img src="/static/icons/search.svg" width="16px" height="16px" />
+			</button>
+		</div>
 	}
 }
 
@@ -162,22 +162,17 @@ fn EmailFolderView(
 	};
 
 	let selected = app_state.selected_email_folder_uuid == on_select_folder_uuid;
-	let background_classes = if selected {
-		Some(classes!("bg-[#555]", "hover:bg-[#555]"))
-	} else {
-		None
-	};
 
 	html! {
 		<div class="w-full">
-			<Button
-				class={classes!("select-none", "inline-flex", "items-center", "w-full", "gap-2", "whitespace-nowrap", "text-sm", "font-medium", "ring-offset-background", "transition-colors", "focus-visible:outline-none", "focus-visible:ring-2", "focus-visible:ring-ring", "focus-visible:ring-offset-2", "disabled:pointer-events-none", "disabled:opacity-50", "[&amp;_svg]:pointer-events-none", "[&amp;_svg]:size-4", "[&amp;_svg]:shrink-0", "hover:bg-[#27272a]", "hover:text-accent-foreground", "h-8", "rounded-md", "px-3", "justify-start", background_classes)}
-				on_click={on_click}
+			<button
+				class={classes!("btn", "btn-ghost", if selected { "bg-accent" } else { "bg-transparent" }, "hover:bg-accent", "w-full")}
+				onclick={on_click}
 			>
-				<Image src="/static/icons/inbox.svg" width="16px" height="16px" class={classes!("lucide", "lucide-file", "mr-2", "h-4", "w-4", "shrink-0", "gap-1")} />
+				<img src="/static/icons/inbox.svg" width="16px" height="16px" class="w-4 h-4 shrink-0 gap-1" />
 				<div class="truncate">{folder_name}</div>
 				<small class="ml-auto text-xs text-gray-100 font-thin">{format!("{}", count)}</small>
-			</Button>
+			</button>
 		</div>
 	}
 }

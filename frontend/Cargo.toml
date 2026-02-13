@@ -26,7 +26,6 @@ wasm-bindgen-futures = { workspace = true }
 serde = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
 pollster = "0.4.0"
-tailyew = "0.1.45"
 
 [features]
 default = []

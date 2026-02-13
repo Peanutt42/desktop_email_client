@@ -2,6 +2,7 @@ use crate::{
 	AppState,
 	api::{get_emails_in_folder, get_emails_matching_search, mark_email_read},
 	pretty_format_date_time, use_app_state,
+	views::EmailAvatar,
 };
 use desktop_email_client_shared::{Email, EmailBody};
 use uuid::Uuid;
@@ -61,28 +62,23 @@ fn EmailSearchbar() -> Html {
 	}
 
 	html! {
-		<div class={classes!("bg-background/95", "p-4", display_class)}>
-			<div class="relative">
-				<svg class="lucide lucide-search absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
-					width="24"
-					height="24"
-					stroke="white"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<image href="/static/icons/search.svg" />
-				</svg>
+		<div class={classes!("p-4", display_class)}>
+			<label class="input w-full">
+				<img width="16px" height="16px" src="/static/icons/search.svg" />
 
 				<input
 					ref={email_searchbar_input_ref}
-					class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-8"
-					placeholder="Search"
 					type="search"
-					name="search"
+					placeholder="Search"
+					class="grow"
 					oninput={on_searchbar_input}
 				/>
-			</div>
+
+				// Keyboard shortcut
+				<kbd class="kbd kbd-xs">{"Ctrl"}</kbd>
+				{"+"}
+				<kbd class="kbd kbd-xs">{"F"}</kbd>
+			</label>
 		</div>
 	}
 }
@@ -150,9 +146,9 @@ fn EmailListOfSelectedFolder() -> HtmlResult {
 #[autoprops]
 #[component]
 fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult {
-	let classes = "p-[7px] rounded-[7px] border-2";
-	let selected_classes = format!("{} bg-[#555] border-transparent", classes);
-	let not_selected_classes = format!("{} border-[#222] hover:bg-[#222] cursor-pointer", classes);
+	let classes = "p-[7px] rounded-box border-2 border-accent";
+	let selected_classes = format!("{} bg-accent border-transparent", classes);
+	let not_selected_classes = format!("{} hover:bg-accent cursor-pointer", classes);
 
 	let app_state = use_app_state();
 	let email_uuid = *email_uuid;
@@ -168,17 +164,17 @@ fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult
 	let time_sent_ago_formatted = pretty_format_date_time(&email.sent_time);
 
 	Ok(html! {
-		<div
+		<button
 			key={format!("{}", email_uuid)}
 			class={if selected { selected_classes } else { not_selected_classes }}
 			onclick={on_click}
 		>
 			<div class="flex flex-row items-center gap-2 w-full">
-				<EmailAvatar />
+				<EmailAvatar name={email.author.name.clone()} />
 				<div class="font-semibold truncate">{ &email.subject }</div>
 			</div>
 			if let EmailBody::TextOnly(body_text) = &email.body {
-				<small class="truncate nowrap block">{ body_text.clone() }</small>
+				<small class="truncate nowrap block text-start">{ body_text.clone() }</small>
 			}
 			<div class="flex flex-row items-center gap-1">
 				for tag_name in email.tags.iter() {
@@ -190,7 +186,7 @@ fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult
 				</small>
 				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if email.read {""} else {"bg-blue-500"})}></div>
 			</div>
-		</div>
+		</button>
 	})
 }
 
@@ -198,15 +194,6 @@ fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult
 #[component]
 fn EmailTagBadge(name: &AttrValue) -> Html {
 	html! {
-		<div class="inline-flex items-center text-nowrap truncate rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-white text-black foreground shadow hover:bg-primary/80">
-			{name}
-		</div>
-	}
-}
-
-#[component]
-fn EmailAvatar() -> Html {
-	html! {
-		<img src="/static/icons/person-circle.svg" class="w-[35px] min-w-[35px] h-[35px] min-h-[35px] shrink-0 align-middle rounded-full" />
+		<span class="badge badge-sm badge-accent whitespace-nowrap truncate block">{name}</span>
 	}
 }

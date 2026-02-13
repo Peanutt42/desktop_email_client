@@ -243,7 +243,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 	let container_class_name = container_css.get_class_name().to_string();
 
 	// width/height of the area that dragging is allowed
-	let drag_area_size = "24px";
+	let drag_area_size = "6px";
 	// width/height of the visible line
 	let drag_line_stroke_width = "1px";
 
@@ -275,7 +275,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 			<div
 				id={drag_id}
 				ref={drag_area}
-				class="drag group relative z-10 bg-[#555]"
+				class="drag group relative z-10 bg-accent"
 				style={format!("cursor:{}; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", cursor_style, drag_line_width, drag_line_height, props.axis.flex_dir())}
 			>
 				<div style={format!("position: absolute; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", drag_area_width, drag_area_height, props.axis.flex_dir())}>
