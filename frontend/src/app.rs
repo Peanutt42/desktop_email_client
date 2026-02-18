@@ -2,7 +2,6 @@ use crate::{
 	KeyboardShortcutListener,
 	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
 };
-use uuid::Uuid;
 use yew::prelude::*;
 
 #[component]
@@ -52,9 +51,9 @@ pub fn App() -> Html {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
-	pub selected_email_uuid: Option<Uuid>,
+	pub selected_email_id: Option<i64>,
 	/// None is implicit "All emails" folders
-	pub selected_email_folder_uuid: Option<Uuid>,
+	pub selected_email_folder_id: Option<i64>,
 	pub email_search_input: Option<AttrValue>,
 	pub show_email_searchbar: bool,
 }

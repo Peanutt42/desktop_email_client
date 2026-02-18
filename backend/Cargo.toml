@@ -19,14 +19,22 @@ tauri = { version = "2.9.5", features = ["tracing"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 fuzzy-matcher = "0.3.7"
-uuid = { workspace = true }
 chrono = { workspace = true }
 actix-web = { version = "4", optional = true }
 actix-cors = { version = "0.7.1", optional = true }
+async-trait = { workspace = true }
+sqlx = { version = "0.8.6", features = [
+	"macros",
+	"sqlite",
+	"runtime-tokio",
+	"migrate",
+	"chrono"
+] }
+dotenvy = { version = "0.15.7", optional = true }
 
 [build-dependencies]
 tauri-build = { version = "2.5.3", features = [] }
 
 [features]
 default = []
-non_ipc_backend = ["actix-web", "actix-cors"]
+non_ipc_backend = ["actix-web", "actix-cors", "dotenvy"]

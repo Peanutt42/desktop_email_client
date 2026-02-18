@@ -1,4 +1,3 @@
-use uuid::Uuid;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
 
@@ -8,10 +7,10 @@ use crate::{api::get_email, use_app_state, views::EmailView};
 pub fn ReaderPane() -> Html {
 	let state = use_app_state();
 
-	let content = match &state.selected_email_uuid {
-		Some(email_uuid) => html! {
+	let content = match &state.selected_email_id {
+		Some(email_id) => html! {
 			<Suspense>
-				<ReaderPaneContent email_uuid={*email_uuid} />
+				<ReaderPaneContent email_id={*email_id} />
 			</Suspense>
 		},
 		None => html! {
@@ -28,8 +27,8 @@ pub fn ReaderPane() -> Html {
 
 #[autoprops]
 #[component]
-fn ReaderPaneContent(email_uuid: &Uuid) -> HtmlResult {
-	let email = use_future_with(*email_uuid, |email_uuid| get_email(*email_uuid))?;
+fn ReaderPaneContent(email_id: &i64) -> HtmlResult {
+	let email = use_future_with(*email_id, |email_id| get_email(*email_id))?;
 
 	Ok(match email.as_ref() {
 		Some(email) => html! {

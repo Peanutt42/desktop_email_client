@@ -1,6 +1,4 @@
 mod backend;
-pub use backend::Backend;
+pub use backend::{Backend, init_db, init_db_from_url};
 
-mod api;
-#[cfg(feature = "non_ipc_backend")]
-pub use api::configure_backend;
+pub mod api;

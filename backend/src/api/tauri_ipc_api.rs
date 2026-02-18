@@ -1,23 +1,11 @@
-#[macro_export]
-macro_rules! generate_tauri_command_for_backend_api {
-	($name:ident, $request_type:ty) => {
-		#[tauri::command(rename_all = "snake_case")]
-		pub fn $name(
-			backend: tauri::State<'_, $crate::Backend>,
-			args: <$request_type as desktop_email_client_shared::ApiRequest>::Args,
-		) -> <$request_type as desktop_email_client_shared::ApiRequest>::Output {
-			backend.$name(args)
-		}
-	};
-}
-#[macro_export]
-macro_rules! generate_tauri_command_for_backend_api_no_args {
-	($name:ident, $request_type:ty) => {
-		#[tauri::command(rename_all = "snake_case")]
-		pub fn $name(
-			backend: tauri::State<'_, $crate::Backend>,
-		) -> <$request_type as desktop_email_client_shared::ApiRequest>::Output {
-			backend.$name(())
-		}
-	};
+use desktop_email_client_shared::{Api, Request, Response};
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn tauri_ipc_api_request_handler(
+	backend: tauri::State<'_, crate::Backend>,
+	args: Request,
+) -> Result<Response, ()> {
+	tracing::info!("{}", args);
+	let response = backend.dispatch(args).await;
+	Ok(response)
 }

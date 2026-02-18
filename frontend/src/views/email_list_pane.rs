@@ -1,11 +1,10 @@
 use crate::{
 	AppState,
-	api::{get_emails_in_folder, get_emails_matching_search, mark_email_read},
+	api::{get_emails, mark_email_read},
 	pretty_format_date_time, use_app_state,
 	views::EmailAvatar,
 };
-use desktop_email_client_shared::{Email, EmailBody};
-use uuid::Uuid;
+use desktop_email_client_shared::{EmailFilter, EmailInfo};
 use web_sys::HtmlInputElement;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
@@ -110,15 +109,16 @@ fn EmailListItems() -> Html {
 fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
 	let state = use_app_state();
 	let search_results = use_future_with(search, |search| {
-		get_emails_matching_search(search.to_string())
+		get_emails(EmailFilter::MatchingSearch {
+			search: search.to_string(),
+		})
 	})?;
 
 	Ok(html! {
-		for search_result in search_results.iter() {
+		for email_info in search_results.iter() {
 			<EmailListItem
-				email={search_result.email.clone()}
-				email_uuid={search_result.email_uuid}
-				selected={state.selected_email_uuid == Some(search_result.email_uuid)}
+				email_info={email_info.clone()}
+				selected={state.selected_email_id == Some(email_info.email_id)}
 			/>
 		}
 	})
@@ -127,17 +127,19 @@ fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
 #[component]
 fn EmailListOfSelectedFolder() -> HtmlResult {
 	let state = use_app_state();
-	let search_results = use_future_with(
-		state.selected_email_folder_uuid,
-		|selected_email_folder_uuid| get_emails_in_folder(*selected_email_folder_uuid),
-	)?;
+	let search_results =
+		use_future_with(state.selected_email_folder_id, |selected_email_folder_id| {
+			get_emails(match *selected_email_folder_id {
+				Some(folder_id) => EmailFilter::Folder { folder_id },
+				None => EmailFilter::Any,
+			})
+		})?;
 
 	Ok(html! {
-		for search_result in search_results.iter() {
+		for email_info in search_results.iter() {
 			<EmailListItem
-				email={search_result.email.clone()}
-				email_uuid={search_result.email_uuid}
-				selected={state.selected_email_uuid == Some(search_result.email_uuid)}
+				email_info={email_info.clone()}
+				selected={state.selected_email_id == Some(email_info.email_id)}
 			/>
 		}
 	})
@@ -145,46 +147,46 @@ fn EmailListOfSelectedFolder() -> HtmlResult {
 
 #[autoprops]
 #[component]
-fn EmailListItem(email: &Email, email_uuid: &Uuid, selected: bool) -> HtmlResult {
+fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 	let classes = "p-[7px] rounded-box border-2 border-accent";
 	let selected_classes = format!("{} bg-accent border-transparent", classes);
 	let not_selected_classes = format!("{} hover:bg-accent cursor-pointer", classes);
 
 	let app_state = use_app_state();
-	let email_uuid = *email_uuid;
+	let email_id = email_info.email_id;
 	let on_click = move |_e| {
 		// TODO: wait a bit
-		wasm_bindgen_futures::spawn_local(mark_email_read(email_uuid));
+		wasm_bindgen_futures::spawn_local(mark_email_read(email_id));
 
 		app_state.set(AppState {
-			selected_email_uuid: Some(email_uuid),
+			selected_email_id: Some(email_id),
 			..(*app_state).clone()
 		});
 	};
-	let time_sent_ago_formatted = pretty_format_date_time(&email.sent_time);
+	let time_sent_ago_formatted = pretty_format_date_time(&email_info.sent_time);
 
 	Ok(html! {
 		<button
-			key={format!("{}", email_uuid)}
+			key={format!("{}", email_id)}
 			class={if selected { selected_classes } else { not_selected_classes }}
 			onclick={on_click}
 		>
 			<div class="flex flex-row items-center gap-2 w-full">
-				<EmailAvatar name={email.author.name.clone()} />
-				<div class="font-semibold truncate">{ &email.subject }</div>
+				<EmailAvatar name={email_info.author_name.clone()} />
+				<div class="font-semibold truncate">{ &email_info.subject }</div>
 			</div>
-			if let EmailBody::TextOnly(body_text) = &email.body {
-				<small class="truncate nowrap block text-start">{ body_text.clone() }</small>
+			if let Some(body_summary) = &email_info.body_summary {
+				<small class="truncate nowrap block text-start">{body_summary}</small>
 			}
 			<div class="flex flex-row items-center gap-1">
-				for tag_name in email.tags.iter() {
+				for tag_name in email_info.tags.iter() {
 					<EmailTagBadge name={tag_name.clone()} />
 				}
 				<div class="flex-grow" />
 				<small class="ml-auto text-xs text-gray-100 font-thin" style="margin: 0; text-wrap: nowrap;">
 					{time_sent_ago_formatted}
 				</small>
-				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if email.read {""} else {"bg-blue-500"})}></div>
+				<div class={format!("{} w-2 h-2 m-[10px] rounded-full shrink-0", if email_info.read {""} else {"bg-blue-500"})}></div>
 			</div>
 		</button>
 	})

@@ -1,0 +1,86 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tSELECT\n\t\t\t\t*,\n\t\t\t\t-- Ensure we get '[]' instead of '[null]' when no tags exist\n\t\t\t\tCOALESCE(\n\t\t\t\t\t(SELECT json_group_array(f.name)\n\t\t\t\t\tFROM email_tags_refs etr\n\t\t\t\t\tJOIN email_folders f ON etr.folder_id = f.id\n\t\t\t\t\tWHERE etr.email_id = id),\n\t\t\t\t\t'[]'\n\t\t\t\t) as \"tags!\"\n\t\t\tFROM emails\n\t\t\tWHERE id = ?\n\t\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "email_account_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "author_name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "author_address",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "subject",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_body_html",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "body",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "body_summary",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "sent_time",
+        "ordinal": 8,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "read",
+        "ordinal": 9,
+        "type_info": "Bool"
+      },
+      {
+        "name": "folder_id",
+        "ordinal": 10,
+        "type_info": "Integer"
+      },
+      {
+        "name": "tags!",
+        "ordinal": 11,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1ae86cd8e14464f7275a5bf3b5b5dee52410c5d2af064c04dfdace069424c0fb"
+}

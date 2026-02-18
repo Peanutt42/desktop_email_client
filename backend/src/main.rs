@@ -1,26 +1,30 @@
-use desktop_email_client_backend::Backend;
-use tauri::Manager;
+use desktop_email_client_backend::{Backend, init_db};
+use tauri::{App, Manager};
 
 fn main() {
 	tracing_subscriber::fmt::fmt().without_time().init();
 
-	let backend = Backend::create_mock();
-
-	let builder = tauri::Builder::default().manage(backend);
+	let builder = tauri::Builder::default();
 
 	#[cfg(not(feature = "non_ipc_backend"))]
 	let builder = builder.invoke_handler(tauri::generate_handler![
-		tauri_commands::get_email_account_count,
-		tauri_commands::get_email_accounts,
-		tauri_commands::get_email,
-		tauri_commands::get_email_folders,
-		tauri_commands::get_emails_in_folder,
-		tauri_commands::get_emails_matching_search,
-		tauri_commands::mark_email_read
+		desktop_email_client_backend::api::tauri_ipc_api_request_handler
 	]);
 
 	builder
-		.setup(|app| {
+		.setup(|app: &mut App| {
+			let sqlite_db_filepath = app
+				.path()
+				.app_local_data_dir()
+				.expect("failed to get local data directory")
+				.join("db.sqlite");
+
+			let db_pool = tauri::async_runtime::block_on(init_db(&sqlite_db_filepath));
+
+			let backend = Backend::new(db_pool);
+
+			app.manage(backend);
+
 			let window = app.get_webview_window("main").unwrap();
 			window.set_decorations(should_have_window_decorations())?;
 			Ok(())
@@ -42,23 +46,4 @@ fn should_have_window_decorations() -> bool {
 	} else {
 		true
 	}
-}
-
-#[cfg(not(feature = "non_ipc_backend"))]
-mod tauri_commands {
-	use desktop_email_client_backend::{
-		generate_tauri_command_for_backend_api, generate_tauri_command_for_backend_api_no_args,
-	};
-	use desktop_email_client_shared::{
-		GetEmail, GetEmailAccountCount, GetEmailAccounts, GetEmailFolders, GetEmailsInFolder,
-		GetEmailsMatchingSearch, MarkEmailRead,
-	};
-
-	generate_tauri_command_for_backend_api!(get_email_account_count, GetEmailAccountCount);
-	generate_tauri_command_for_backend_api_no_args!(get_email_accounts, GetEmailAccounts);
-	generate_tauri_command_for_backend_api!(get_email, GetEmail);
-	generate_tauri_command_for_backend_api!(get_email_folders, GetEmailFolders);
-	generate_tauri_command_for_backend_api!(get_emails_in_folder, GetEmailsInFolder);
-	generate_tauri_command_for_backend_api!(get_emails_matching_search, GetEmailsMatchingSearch);
-	generate_tauri_command_for_backend_api!(mark_email_read, MarkEmailRead);
 }

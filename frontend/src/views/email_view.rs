@@ -8,7 +8,7 @@ pub fn EmailView(email: &Email) -> Html {
 	html! {
 		<div class="flex flex-col w-full h-full">
 			<div class="border-b border-accent flex flex-row">
-				<EmailAvatar big=true name={email.author.name.clone()} />
+				<EmailAvatar big=true name={email.author_name.clone()} />
 
 				<div class="p-3">
 					<div class="text-xl font-bold break-normal">
@@ -18,7 +18,7 @@ pub fn EmailView(email: &Email) -> Html {
 					<div class="flex flex-row gap-1.5">
 						<div class="select-none">{ "From: " }</div>
 
-						<div class="text-nowrap">{ format!("{} ({})", email.author.name, email.author.address) }</div>
+						<div class="text-nowrap">{ format!("{} ({})", email.author_name, email.author_address) }</div>
 					</div>
 				</div>
 			</div>

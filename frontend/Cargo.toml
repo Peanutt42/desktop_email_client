@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 desktop_email_client_shared = { path = "../shared" }
-uuid = { workspace = true }
 chrono = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
