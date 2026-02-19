@@ -1,21 +1,18 @@
-use desktop_email_client_shared::EmailFolder;
+use desktop_email_client_shared::{ApiClient as _, EmailFolder};
 use yew::{
 	prelude::*,
 	suspense::{use_future, use_future_with},
 };
 use yew_autoprops::autoprops;
 
-use crate::{
-	AppState,
-	api::{get_email_accounts, get_email_folders},
-	use_app_state,
-};
+use crate::{AppState, use_app_state};
 
 #[component]
 pub fn EmailFolderPane() -> HtmlResult {
 	let app_state = use_app_state();
+	let api_client = &app_state.api_client;
 
-	let email_accounts = use_future(get_email_accounts)?;
+	let email_accounts = use_future(|| api_client.get_email_accounts())?;
 
 	let email_account_name_styling = "text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none; font-size: var(--font-base);";
 
@@ -89,8 +86,9 @@ fn ToggleEmailSearchbarButton() -> Html {
 #[component]
 fn EmailFolders(email_account_id: i64) -> HtmlResult {
 	let app_state = use_app_state();
+	let api_client = &app_state.api_client;
 	let folders = use_future_with(email_account_id, |email_account_id| {
-		get_email_folders(*email_account_id)
+		api_client.get_email_folders(*email_account_id)
 	})?;
 
 	Ok(html! {

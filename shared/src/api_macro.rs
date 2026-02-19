@@ -76,5 +76,21 @@ macro_rules! api {
 				}
 			}
 		}
+
+		#[async_trait::async_trait(?Send)]
+		pub trait ApiClient : Sized {
+			$(
+				#[allow(non_snake_case)]
+				async fn $name(self, $($arg : $arg_ty),*) -> $resp {
+					let response = self.dispatch(Request::$name { $($arg,)* }).await;
+					match response {
+						Response::$name(res) => res,
+						_ => unreachable!("dispatch had a request/response type mismatch"),
+					}
+				}
+			)*
+
+			async fn dispatch(self, request: Request) -> Response;
+		}
 	};
 }

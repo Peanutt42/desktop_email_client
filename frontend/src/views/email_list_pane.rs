@@ -1,10 +1,5 @@
-use crate::{
-	AppState,
-	api::{get_emails, mark_email_read},
-	pretty_format_date_time, use_app_state,
-	views::EmailAvatar,
-};
-use desktop_email_client_shared::{EmailFilter, EmailInfo};
+use crate::{AppState, pretty_format_date_time, use_app_state, views::EmailAvatar};
+use desktop_email_client_shared::{ApiClient, EmailFilter, EmailInfo};
 use web_sys::HtmlInputElement;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
@@ -108,8 +103,9 @@ fn EmailListItems() -> Html {
 #[component]
 fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
 	let state = use_app_state();
+	let api_client = &state.api_client;
 	let search_results = use_future_with(search, |search| {
-		get_emails(EmailFilter::MatchingSearch {
+		api_client.get_emails(EmailFilter::MatchingSearch {
 			search: search.to_string(),
 		})
 	})?;
@@ -127,9 +123,10 @@ fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
 #[component]
 fn EmailListOfSelectedFolder() -> HtmlResult {
 	let state = use_app_state();
+	let api_client = &state.api_client;
 	let search_results =
 		use_future_with(state.selected_email_folder_id, |selected_email_folder_id| {
-			get_emails(match *selected_email_folder_id {
+			api_client.get_emails(match *selected_email_folder_id {
 				Some(folder_id) => EmailFilter::Folder { folder_id },
 				None => EmailFilter::Any,
 			})
@@ -153,10 +150,11 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 	let not_selected_classes = format!("{} hover:bg-accent cursor-pointer", classes);
 
 	let app_state = use_app_state();
+	let api_client = app_state.api_client;
 	let email_id = email_info.email_id;
 	let on_click = move |_e| {
 		// TODO: wait a bit
-		wasm_bindgen_futures::spawn_local(mark_email_read(email_id));
+		wasm_bindgen_futures::spawn_local(api_client.mark_email_read(email_id));
 
 		app_state.set(AppState {
 			selected_email_id: Some(email_id),

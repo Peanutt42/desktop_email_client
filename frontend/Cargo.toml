@@ -24,7 +24,7 @@ yew-hooks = "0.4.0"
 wasm-bindgen-futures = { workspace = true }
 serde = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
-pollster = "0.4.0"
+async-trait = { workspace = true }
 
 [features]
 default = []

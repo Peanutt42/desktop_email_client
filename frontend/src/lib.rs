@@ -1,7 +1,7 @@
 mod app;
 pub use app::{App, AppState, use_app_state};
 
-mod api;
+pub mod api;
 
 pub mod views;
 

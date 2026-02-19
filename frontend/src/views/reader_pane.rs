@@ -1,7 +1,8 @@
+use desktop_email_client_shared::ApiClient;
 use yew::{prelude::*, suspense::use_future_with};
 use yew_autoprops::autoprops;
 
-use crate::{api::get_email, use_app_state, views::EmailView};
+use crate::{use_app_state, views::EmailView};
 
 #[component]
 pub fn ReaderPane() -> Html {
@@ -28,7 +29,9 @@ pub fn ReaderPane() -> Html {
 #[autoprops]
 #[component]
 fn ReaderPaneContent(email_id: &i64) -> HtmlResult {
-	let email = use_future_with(*email_id, |email_id| get_email(*email_id))?;
+	let state = use_app_state();
+	let api_client = &state.api_client;
+	let email = use_future_with(*email_id, |email_id| api_client.get_email(*email_id))?;
 
 	Ok(match email.as_ref() {
 		Some(email) => html! {

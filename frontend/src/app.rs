@@ -1,5 +1,6 @@
 use crate::{
 	KeyboardShortcutListener,
+	api::FrontendApiClient,
 	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
 };
 use yew::prelude::*;
@@ -51,6 +52,7 @@ pub fn App() -> Html {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
+	pub api_client: FrontendApiClient,
 	pub selected_email_id: Option<i64>,
 	/// None is implicit "All emails" folders
 	pub selected_email_folder_id: Option<i64>,
