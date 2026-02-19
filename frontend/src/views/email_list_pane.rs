@@ -194,6 +194,6 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 #[component]
 fn EmailTagBadge(name: &AttrValue) -> Html {
 	html! {
-		<span class="badge badge-sm badge-accent whitespace-nowrap truncate block">{name}</span>
+		<span class="badge badge-sm badge-ghost badge-info whitespace-nowrap truncate block">{name}</span>
 	}
 }

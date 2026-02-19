@@ -50,7 +50,7 @@ pub fn EmailBodyView(email: &Email) -> Html {
 #[autoprops]
 #[component]
 pub fn EmailAvatar(name: AttrValue, #[prop_or_default] big: bool) -> Html {
-	let base_classes = classes!("shrink-0", "rounded-full", "bg-neutral");
+	let base_classes = classes!("shrink-0", "rounded-full", "bg-neutral-500");
 	let class = if big {
 		classes!("w-14", "h-14", "min-w-14", "min-h-14", base_classes)
 	} else {

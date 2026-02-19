@@ -17,9 +17,9 @@ pub fn EmailFolderPane() -> HtmlResult {
 	let email_account_name_styling = "text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none; font-size: var(--font-base);";
 
 	Ok(html! {
-		<div class="w-full p-10px flex flex-col" style="height: inherit">
-			<div class="flex flex-col overflow-y-auto grow p-[15px] gap-1">
-				<div class="flex flex-row gap-2">
+		<div class="w-full p-10px flex flex-col bg-base-100" style="height: inherit">
+			<div class="flex flex-col overflow-y-auto grow p-[10px]">
+				<div class="flex flex-row gap-1">
 					<EmailFolderView
 						folder_name="All"
 						on_select_folder_id={None}
@@ -31,6 +31,8 @@ pub fn EmailFolderPane() -> HtmlResult {
 				</div>
 
 				for email_account in email_accounts.iter() {
+					<div class="divider my-1" />
+
 					<details open=true class="collapse collapse-arrow shrink-0">
 						<summary class="collapse-title text-base pt-[5px] pb-[5px] flex flex-row">
 							<div style={email_account_name_styling}>{format!("{} (", email_account.name)}</div>
@@ -39,7 +41,7 @@ pub fn EmailFolderPane() -> HtmlResult {
 							</div>
 							<div style={email_account_name_styling}>{")"}</div>
 						</summary>
-						<div class="collapse-content">
+						<div class="collapse-content p-0">
 							<EmailFolders email_account_id={email_account.id} />
 						</div>
 					</details>
@@ -163,7 +165,7 @@ fn EmailFolderView(
 	html! {
 		<div class="w-full">
 			<button
-				class={classes!("btn", if selected { "bg-accent" } else { "bg-background" }, "hover:bg-accent", "w-full")}
+				class={classes!("btn", if selected { "bg-accent" } else { "bg-transparent" }, "hover:bg-accent", "border-0", "w-full")}
 				onclick={on_click}
 			>
 				<img src="/static/icons/inbox.svg" width="16px" height="16px" class="w-4 h-4 shrink-0 gap-1" />
