@@ -3,7 +3,6 @@
 
 use gloo::events::EventListener;
 use gloo::utils::window;
-use stylist::Style;
 use web_sys::wasm_bindgen::JsCast;
 use web_sys::wasm_bindgen::prelude::Closure;
 use web_sys::{DomRect, HtmlElement};
@@ -65,7 +64,6 @@ pub struct Props {
 	pub bottom: Option<VNode>,
 }
 
-// TODO: make left/top side width absolute (pixels, not percentage)
 #[function_component]
 pub fn SplitPanes(props: &Props) -> Html {
 	let container = use_node_ref();
@@ -83,35 +81,36 @@ pub fn SplitPanes(props: &Props) -> Html {
 	});
 	let container_width = use_mut_ref(|| 0);
 
-	let stopped_resizing = use_state(|| false);
 	let new_left_width = use_state(|| *left_width.borrow_mut());
 
-	let mut left_style = format!("{}: {}px;", props.axis.resize_dir(), *new_left_width);
-	let mut right_style = String::from("flex: 1 1 0%;");
-	let mut container_style = format!(
-		"display: flex; flex: 1 1 0%; flex-direction: {}; {}: 100%;",
+	let cursor = props.axis.cursor();
+	let no_interact = if *is_resizing.borrow() {
+		format!("user-select:none;pointer-events:none;cursor:{cursor};")
+	} else {
+		String::new()
+	};
+
+	let height_style = props
+		.height
+		.as_deref()
+		.map(|h| format!("max-height:{h};min-height:{h};height:{h};"))
+		.unwrap_or_default();
+
+	let container_style = format!(
+		"display:flex;flex:1 1 0%;flex-direction:{};{}:100%;{height_style}",
 		props.axis.flex_dir(),
-		props.axis.resize_dir()
+		props.axis.resize_dir(),
 	);
 
-	if *is_resizing.borrow_mut() {
-		let style = format!(
-			"user-select:none; pointer-events:none; cursor:{};",
-			props.axis.cursor()
-		);
-		left_style.push_str(&style);
-		right_style.push_str(&style);
-	}
-	if let Some(height) = &props.height {
-		let height_style = format!("max-height:{height};min-height:{height};height:{height};");
-		container_style.push_str(height_style.as_str());
-		left_style.push_str(height_style.as_str());
-		right_style.push_str(height_style.as_str());
-	}
+	let left_style = format!(
+		"{}:{}px;{no_interact}{height_style}",
+		props.axis.resize_dir(),
+		*new_left_width,
+	);
 
-	let left_css = Style::new(left_style).expect("Failed to create left style");
-	let right_css = Style::new(right_style).expect("Failed to create right style");
-	let container_css = Style::new(container_style).expect("Failed to create cont. style");
+	let right_style = format!("flex:1 1 0%;{no_interact}{height_style}");
+
+	let body = gloo::utils::document().body().unwrap();
 
 	{
 		// Create window mouse up listener
@@ -125,9 +124,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 			let listener = EventListener::new(&window(), "pointerup", move |_| {
 				*container_width.borrow_mut() = props.axis.rect(&div.get_bounding_client_rect());
 			});
-			move || {
-				drop(listener);
-			}
+			move || drop(listener)
 		});
 	}
 	{
@@ -142,9 +139,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 			let listener = EventListener::new(&window(), "resize", move |_| {
 				*container_width.borrow_mut() = props.axis.rect(&div.get_bounding_client_rect());
 			});
-			move || {
-				drop(listener);
-			}
+			move || drop(listener)
 		});
 	}
 	{
@@ -154,6 +149,7 @@ pub fn SplitPanes(props: &Props) -> Html {
 		let drag = drag_area.clone();
 		let left_width = left_width.clone();
 		let is_resizing = is_resizing.clone();
+		let body = body.clone();
 		let props = props.clone();
 		use_effect_with(drag, move |drag| {
 			let drag = drag.clone();
@@ -168,6 +164,9 @@ pub fn SplitPanes(props: &Props) -> Html {
 					let size = props.axis.rect(&left_side.get_bounding_client_rect());
 					*left_width.borrow_mut() = size;
 					*is_resizing.borrow_mut() = true;
+					body.style()
+						.set_property("cursor", props.axis.cursor())
+						.unwrap();
 					let div = drag
 						.cast::<HtmlElement>()
 						.expect("drag not attached to div element");
@@ -176,15 +175,14 @@ pub fn SplitPanes(props: &Props) -> Html {
 				}));
 			div.add_event_listener_with_callback("pointerdown", listener.as_ref().unchecked_ref())
 				.unwrap();
-			move || {
-				drop(listener);
-			}
+			move || drop(listener)
 		});
 	}
 	{
 		// Create mouse move listener
 		let container = container.clone();
 		let is_resizing = is_resizing.clone();
+		let left_width = left_width.clone();
 		let new_left_width = new_left_width.clone();
 		let props = props.clone();
 		use_effect_with(container, move |container| {
@@ -199,48 +197,47 @@ pub fn SplitPanes(props: &Props) -> Html {
 					if *is_resizing.borrow_mut() {
 						let dx = ev.client_x() - *x.borrow_mut();
 						let dy = ev.client_y() - *y.borrow_mut();
+						*x.borrow_mut() = ev.client_x();
+						*y.borrow_mut() = ev.client_y();
 						let d = match props.axis {
 							Axis::Vertical => dx,
 							Axis::Horizontal => dy,
 						};
 						let w = *left_width.borrow_mut() + d;
 						new_left_width.set(w);
-						left_width_storage.set(w);
+						*left_width.borrow_mut() = w;
 					}
 				}));
 			div.add_event_listener_with_callback("pointermove", listener.as_ref().unchecked_ref())
 				.unwrap();
-			move || {
-				drop(listener);
-			}
+			move || drop(listener)
 		});
 	}
 	{
 		// Create mouse up listener
 		let container = container.clone();
 		let drag = drag_area.clone();
+		let left_width = left_width.clone();
 		use_effect_with((container, drag), move |(container, drag)| {
 			let drag = drag.clone();
+			let left_width = left_width.clone();
 			let drag_div = drag.cast::<HtmlElement>().expect("drag not div element");
 			let div = container
 				.cast::<HtmlElement>()
 				.expect("container not attached to div element");
 			let listener = Closure::<dyn Fn(PointerEvent)>::wrap(Box::new(move |ev| {
 				*is_resizing.borrow_mut() = false;
-				stopped_resizing.set(true);
+				body.style().remove_property("cursor").unwrap();
+				left_width_storage.set(*left_width.borrow());
 				drag_div
 					.release_pointer_capture(ev.pointer_id())
 					.expect("failed to release pointer capture on pointerup");
 			}));
 			div.add_event_listener_with_callback("pointerup", listener.as_ref().unchecked_ref())
 				.unwrap();
-			move || {
-				drop(listener);
-			}
+			move || drop(listener)
 		});
 	}
-
-	let container_class_name = container_css.get_class_name().to_string();
 
 	// width/height of the area that dragging is allowed
 	let drag_area_size = "6px";
@@ -263,12 +260,10 @@ pub fn SplitPanes(props: &Props) -> Html {
 		Axis::Vertical => (drag_line_stroke_width, "100%"),
 		Axis::Horizontal => ("100%", drag_line_stroke_width),
 	};
-	let cursor_style = props.axis.cursor();
 
-	// TODO: remove horizontal axis or truly generalize this implementation -> see width: {}, height: 100%
 	html! {
-		<div ref={container} class={container_class_name}>
-			<div class={format!("panel {}", left_css.get_class_name())} id={first_id}>
+		<div ref={container} style={container_style}>
+			<div class="panel" style={left_style} id={first_id}>
 				{ first_html }
 			</div>
 
@@ -276,14 +271,14 @@ pub fn SplitPanes(props: &Props) -> Html {
 				id={drag_id}
 				ref={drag_area}
 				class="drag group relative z-10 bg-accent"
-				style={format!("cursor:{}; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", cursor_style, drag_line_width, drag_line_height, props.axis.flex_dir())}
+				style={format!("cursor:{cursor}; width:{drag_line_width}; height:{drag_line_height}; display:flex; flex-direction:{}; justify-content:center;", props.axis.flex_dir())}
 			>
-				<div style={format!("position: absolute; width: {}; height: {}; display: flex; flex-direction: {}; justify-content: center;", drag_area_width, drag_area_height, props.axis.flex_dir())}>
-					<div style={format!("width: {}; height: {};", drag_area_width, drag_area_height)} />
+				<div style={format!("position:absolute; width:{drag_area_width}; height:{drag_area_height}; display:flex; flex-direction:{}; justify-content:center;", props.axis.flex_dir())}>
+					<div style={format!("width:{drag_area_width}; height:{drag_area_height};")} />
 				</div>
 			</div>
 
-			<div class={format!("panel {}", right_css.get_class_name())} style="width: 100%" id={second_id}>
+			<div class="panel" style={format!("width:100%;{right_style}")} id={second_id}>
 				{ second_html }
 			</div>
 		</div>
