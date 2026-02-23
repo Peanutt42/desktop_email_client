@@ -225,14 +225,15 @@ pub fn SplitPanes(props: &Props) -> Html {
 			let div = container
 				.cast::<HtmlElement>()
 				.expect("container not attached to div element");
-			let listener = Closure::<dyn Fn(PointerEvent)>::wrap(Box::new(move |ev| {
-				*is_resizing.borrow_mut() = false;
-				body.style().remove_property("cursor").unwrap();
-				left_width_storage.set(*left_width.borrow());
-				drag_div
-					.release_pointer_capture(ev.pointer_id())
-					.expect("failed to release pointer capture on pointerup");
-			}));
+			let listener =
+				Closure::<dyn Fn(PointerEvent)>::wrap(Box::new(move |ev: PointerEvent| {
+					*is_resizing.borrow_mut() = false;
+					body.style().remove_property("cursor").unwrap();
+					left_width_storage.set(*left_width.borrow());
+					drag_div
+						.release_pointer_capture(ev.pointer_id())
+						.expect("failed to release pointer capture on pointerup");
+				}));
 			div.add_event_listener_with_callback("pointerup", listener.as_ref().unchecked_ref())
 				.unwrap();
 			move || drop(listener)
