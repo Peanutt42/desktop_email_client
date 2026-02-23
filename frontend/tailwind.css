@@ -1,19 +1,8 @@
 @import "tailwindcss";
 
-@source "!./daisyui.mjs";
-@source "!./daisyui-theme.mjs";
+@source "./src/**/*.rs";
 
-@plugin "./daisyui.mjs" {
-	themes:
-		black --default --prefersdark,
-		light;
-}
-
-@plugin "./daisyui-theme.mjs" {
-	name: "black";
-	default: true;
-	prefersdark: true;
-	color-scheme: "dark";
+[data-theme="black"] {
 	--color-base-100: oklch(0% 0 0);
 	--color-base-200: oklch(19% 0 0);
 	--color-base-300: oklch(22% 0 0);

@@ -5,3 +5,6 @@ node_modules/
 
 # generated with tailwindcss/cli
 static/tailwind.css
+
+# downloaded by build.rs
+static/daisyui.min.css

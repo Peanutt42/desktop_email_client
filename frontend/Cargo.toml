@@ -3,6 +3,9 @@ name = "desktop_email_client_frontend"
 version = "0.1.0"
 edition = "2024"
 
+[build-dependencies]
+ureq = { version = "2.9.1", features = ["json"] }
+
 [dependencies]
 desktop_email_client_shared = { path = "../shared" }
 chrono = { workspace = true }
