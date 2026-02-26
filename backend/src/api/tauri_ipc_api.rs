@@ -5,7 +5,7 @@ pub async fn tauri_ipc_api_request_handler(
 	backend: tauri::State<'_, crate::Backend>,
 	args: Request,
 ) -> Result<Response, ()> {
-	tracing::info!("{}", args);
+	tracing::debug!("{}", args);
 	let response = backend.dispatch(args).await;
 	Ok(response)
 }

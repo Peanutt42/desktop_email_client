@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO emails (email_account_id, author_name, author_address, subject, is_body_html, body, body_summary, sent_time, folder_id) VALUES\n\t\t\t(?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "7b43f0ecaca8ee089c4c2f75f7506ce3d423017260edb6110729d3cef2385edd"
+}

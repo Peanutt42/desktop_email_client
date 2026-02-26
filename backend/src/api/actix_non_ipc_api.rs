@@ -9,7 +9,7 @@ pub fn configure_actix_backend_api_routes(service_cfg: &mut ServiceConfig) {
 		post().to(
 			async |backend: Data<Arc<Backend>>, request: Json<Request>| -> Json<Response> {
 				let request = request.into_inner();
-				tracing::info!("{}", request);
+				tracing::debug!("{}", request);
 				let response = backend.get_ref().dispatch(request).await;
 				Json(response)
 			},

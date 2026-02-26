@@ -31,11 +31,11 @@ pub fn ReaderPane() -> Html {
 fn ReaderPaneContent(email_id: &i64) -> HtmlResult {
 	let state = use_app_state();
 	let api_client = &state.api_client;
-	let email = use_future_with(*email_id, |email_id| api_client.get_email(*email_id))?;
+	let email_row = use_future_with(*email_id, |email_id| api_client.get_email(*email_id))?;
 
-	Ok(match email.as_ref() {
-		Some(email) => html! {
-			<EmailView email={email.clone()} />
+	Ok(match email_row.as_ref() {
+		Some(email_row) => html! {
+			<EmailView email={email_row.email.clone()} />
 		},
 		None => html! {
 			<p class="p-3 w-full h-full flex items-center justify-center select-none">{ "Email not found" }</p>

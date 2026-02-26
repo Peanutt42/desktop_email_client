@@ -1,6 +1,5 @@
 # Creates dev_db.sqlite, used by sqlx to check sql queries at comp time (deletes existing db)
 create-dev-db:
-    @echo "DATABASE_URL=sqlite:///$(pwd)/dev_db.sqlite" > .env
     @echo "Deleting old dev_db.sqlite"
     @- rm ./dev_db.sqlite* 2>&1 1> /dev/null
     sqlx database create

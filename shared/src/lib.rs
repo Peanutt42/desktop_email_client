@@ -1,10 +1,13 @@
 mod email;
-pub use email::{Email, EmailAccount, EmailBody, EmailFolder};
+pub use email::{
+	Email, EmailAccount, EmailBody, EmailBodySummary, EmailEnvelope, EmailFolder, EmailInfo,
+	EmailProvider, EmailProviderType, EmailRow, ReceivedEmail,
+};
 
 mod api;
 pub use api::{
-	Api, ApiClient, DEV_NON_IPC_API_ROUTE, EmailFilter, EmailInfo, Request, Response,
-	TauriCommandArgsWrapper,
+	Api, ApiClient, DATABASE_CHANGED_EVENT_NAME, DEV_NON_IPC_API_ROUTE, DatabaseChangedEvent,
+	EmailFilter, Request, Response, TauriCommandArgsWrapper,
 };
 
 mod api_macro;

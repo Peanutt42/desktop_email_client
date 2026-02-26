@@ -16,7 +16,7 @@ fn main() {
 		.with(web_console_layer)
 		.init();
 
-	tracing::info!("Starting desktop_email_client frontend yew application!");
+	tracing::debug!("Starting desktop_email_client frontend yew application!");
 
 	yew::Renderer::<desktop_email_client_frontend::App>::new().render();
 }

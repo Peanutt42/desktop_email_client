@@ -12,3 +12,9 @@ pub use reader_pane::ReaderPane;
 
 mod split_panes;
 pub use split_panes::{Axis, SplitPanes};
+
+mod settings_dialog;
+pub use settings_dialog::{SettingsDialog, show_settings_dialog};
+
+mod add_email_account_screen;
+pub use add_email_account_screen::AddEmailAccountScreen;

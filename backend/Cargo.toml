@@ -16,6 +16,7 @@ required-features = ["non_ipc_backend"]
 [dependencies]
 desktop_email_client_shared = { path = "../shared" }
 tauri = { version = "2.9.5", features = ["tracing"] }
+tokio = { version = "1.49.0", features = ["macros"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 fuzzy-matcher = "0.3.7"
@@ -31,6 +32,13 @@ sqlx = { version = "0.8.6", features = [
 	"chrono"
 ] }
 dotenvy = { version = "0.15.7", optional = true }
+async-imap = { version = "0.11.2", default-features = false, features = ["runtime-tokio"] }
+async-native-tls = { version = "0.5.0", default-features = false, features = ["runtime-tokio"] }
+thiserror = { workspace = true }
+futures-util = { workspace = true }
+keyring = { version = "3.6.3", features = ["sync-secret-service"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [build-dependencies]
 tauri-build = { version = "2.5.3", features = [] }

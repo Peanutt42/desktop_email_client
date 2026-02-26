@@ -1,7 +1,7 @@
 use crate::{
 	KeyboardShortcutListener,
 	api::FrontendApiClient,
-	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SplitPanes},
+	views::{Axis, EmailFolderPane, EmailListPane, ReaderPane, SettingsDialog, SplitPanes},
 };
 use yew::prelude::*;
 
@@ -44,13 +44,14 @@ pub fn App() -> Html {
 					left={email_folder_pane}
 					right={main_pane}
 				/>
+				<SettingsDialog node_ref={&app_state.settings_dialog_node_ref} />
 				<KeyboardShortcutListener app_state={app_state} />
 			</ContextProvider<UseStateHandle<AppState>>>
 		</main>
 	}
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct AppState {
 	pub api_client: FrontendApiClient,
 	pub selected_email_id: Option<i64>,
@@ -58,6 +59,7 @@ pub struct AppState {
 	pub selected_email_folder_id: Option<i64>,
 	pub email_search_input: Option<AttrValue>,
 	pub show_email_searchbar: bool,
+	pub settings_dialog_node_ref: NodeRef,
 }
 impl AppState {
 	pub fn set_show_email_searchbar(self, show_email_searchbar: bool) -> Self {

@@ -161,7 +161,7 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 			..(*app_state).clone()
 		});
 	};
-	let time_sent_ago_formatted = pretty_format_date_time(&email_info.sent_time);
+	let time_sent_ago_formatted = pretty_format_date_time(&email_info.envelope.sent_time);
 
 	Ok(html! {
 		<button
@@ -170,8 +170,8 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 			onclick={on_click}
 		>
 			<div class="flex flex-row items-center gap-2 w-full">
-				<EmailAvatar name={email_info.author_name.clone()} />
-				<div class="font-semibold truncate">{ &email_info.subject }</div>
+				<EmailAvatar name={email_info.envelope.author_name.clone()} />
+				<div class="font-semibold truncate">{ &email_info.envelope.subject }</div>
 			</div>
 			if let Some(body_summary) = &email_info.body_summary {
 				<small class="truncate nowrap block text-start">{body_summary}</small>

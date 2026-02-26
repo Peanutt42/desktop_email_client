@@ -5,30 +5,30 @@ use actix_web::{
 	web::Data,
 };
 use desktop_email_client_backend::{
-	Backend,
+	Backend, Database,
 	api::{
 		DEV_NON_IPC_BACKEND_PORT, DEV_NON_IPC_FRONTEND_PORT, configure_actix_backend_api_routes,
 	},
-	init_db_from_url,
+	init_tracing,
 };
-use desktop_email_client_shared::Api;
 use std::sync::Arc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-	tracing_subscriber::fmt::fmt().without_time().init();
+	init_tracing();
 
 	dotenvy::dotenv().expect("failed to load .env file");
+
 	let url = dotenvy::var("DATABASE_URL")
 		.expect("`DATABASE_URL` env var not set, please set it (temporary or in .env file)");
 
-	let db_pool = init_db_from_url(&url).await;
+	let database = Database::init_from_url(&url).await;
 
-	let backend = Arc::new(Backend::new(db_pool));
-
-	if backend.get_email_accounts().await.is_empty() {
-		backend.populate_with_mock_data().await;
+	if database.get_email_accounts().await.is_empty() {
+		database.populate_with_mock_data().await;
 	}
+
+	let backend = Arc::new(Backend::new(database).await);
 
 	HttpServer::new(move || {
 		let cors = Cors::default()

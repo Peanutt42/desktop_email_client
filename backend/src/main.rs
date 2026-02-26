@@ -1,8 +1,9 @@
-use desktop_email_client_backend::{Backend, init_db};
-use tauri::{App, Manager};
+use desktop_email_client_backend::{Backend, Database, init_tracing};
+use desktop_email_client_shared::{DATABASE_CHANGED_EVENT_NAME, DatabaseChangedEvent};
+use tauri::{App, Emitter, Manager};
 
 fn main() {
-	tracing_subscriber::fmt::fmt().without_time().init();
+	init_tracing();
 
 	let builder = tauri::Builder::default();
 
@@ -13,15 +14,27 @@ fn main() {
 
 	builder
 		.setup(|app: &mut App| {
-			let sqlite_db_filepath = app
+			let app_data_dir = app
 				.path()
 				.app_local_data_dir()
-				.expect("failed to get local data directory")
-				.join("db.sqlite");
+				.expect("failed to get local data directory");
 
-			let db_pool = tauri::async_runtime::block_on(init_db(&sqlite_db_filepath));
+			let sqlite_db_filepath = app_data_dir.join("db.sqlite");
 
-			let backend = Backend::new(db_pool);
+			let database =
+				tauri::async_runtime::block_on(Database::init_from_file(&sqlite_db_filepath));
+
+			let app_handle = app.handle().clone();
+
+			let on_database_update = move |event: DatabaseChangedEvent| {
+				tracing::debug!("emit db update: {:?}", event);
+				app_handle.emit(DATABASE_CHANGED_EVENT_NAME, event).unwrap();
+			};
+
+			let backend = tauri::async_runtime::block_on(Backend::new(
+				database,
+				Box::new(on_database_update),
+			));
 
 			app.manage(backend);
 
@@ -43,6 +56,7 @@ fn should_have_window_decorations() -> bool {
 		xdg_current_desktop != "niri"
 			&& xdg_current_desktop != "sway"
 			&& xdg_current_desktop != "i3"
+			&& xdg_current_desktop != "Hyprland"
 	} else {
 		true
 	}

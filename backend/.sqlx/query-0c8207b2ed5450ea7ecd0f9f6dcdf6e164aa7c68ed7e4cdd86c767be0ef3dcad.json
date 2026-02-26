@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tINSERT INTO email_accounts (name, address, provider_type)\n\t\t\tVALUES (?, ?, ?)\n\t\t\tRETURNING id\n\t\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0c8207b2ed5450ea7ecd0f9f6dcdf6e164aa7c68ed7e4cdd86c767be0ef3dcad"
+}

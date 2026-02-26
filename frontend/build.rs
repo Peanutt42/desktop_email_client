@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::PathBuf;
 
 const DAISYUI_MIN_CSS_URL: &str = "https://cdn.jsdelivr.net/npm/daisyui@5";
@@ -21,6 +22,7 @@ fn main() {
 
 		let mut file_content = Vec::new();
 		response
+			.into_body()
 			.into_reader()
 			.read_to_end(&mut file_content)
 			.unwrap_or_else(|e| {

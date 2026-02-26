@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tSELECT\n\t\t\t\te.id,\n\t\t\t\te.email_account_id,\n\t\t\t\te.author_name,\n\t\t\t\te.author_address,\n\t\t\t\te.subject,\n\t\t\t\te.body_summary,\n\t\t\t\te.sent_time,\n\t\t\t\te.read,\n\t\t\t\te.folder_id,\n\t\t\t\t-- Ensure we get '[]' instead of '[null]' when no tags exist\n\t\t\t\tCOALESCE(\n\t\t\t\t\t(SELECT json_group_array(f.name)\n\t\t\t\t\tFROM email_tags_refs etr\n\t\t\t\t\tJOIN email_folders f ON etr.folder_id = f.id\n\t\t\t\t\tWHERE etr.email_id = e.id),\n\t\t\t\t\t'[]'\n\t\t\t\t) as \"tags!\"\n\t\t\tFROM emails e\n\t\t\tWHERE (?1 IS NULL OR e.folder_id = ?1)\n\t\t\tGROUP BY e.id\n\t\t\tORDER BY e.sent_time DESC\n\t\t\t",
+  "query": "\n\t\t\tSELECT\n\t\t\t\te.id,\n\t\t\t\te.email_account_id,\n\t\t\t\te.author_name,\n\t\t\t\te.author_address,\n\t\t\t\te.subject,\n\t\t\t\te.body_summary,\n\t\t\t\te.sent_time,\n\t\t\t\te.read,\n\t\t\t\t-- Ensure we get '[]' instead of '[null]' when no tags exist\n\t\t\t\tCOALESCE(\n\t\t\t\t\t(SELECT json_group_array(f.name)\n\t\t\t\t\tFROM email_tags_refs etr\n\t\t\t\t\tJOIN email_folders f ON etr.folder_id = f.id\n\t\t\t\t\tWHERE etr.email_id = e.id),\n\t\t\t\t\t'[]'\n\t\t\t\t) as \"tags!\"\n\t\t\tFROM emails e\n\t\t\tWHERE (?1 IS NULL OR e.folder_id = ?1)\n\t\t\tGROUP BY e.id\n\t\t\tORDER BY e.sent_time DESC\n\t\t\t",
   "describe": {
     "columns": [
       {
@@ -44,13 +44,8 @@
         "type_info": "Bool"
       },
       {
-        "name": "folder_id",
-        "ordinal": 8,
-        "type_info": "Integer"
-      },
-      {
         "name": "tags!",
-        "ordinal": 9,
+        "ordinal": 8,
         "type_info": "Text"
       }
     ],
@@ -66,9 +61,8 @@
       true,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "ec5078a815994a744aa4bb05a384b0be14d96be9d959738b611bc4a5c7cbc4c7"
+  "hash": "55c97ba7af518f85e0243bf8d66b2facc481f8124638578f7609a331e2e4a91c"
 }

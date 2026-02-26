@@ -3,7 +3,10 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE email_accounts (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name TEXT NOT NULL,
-	address TEXT NOT NULL
+	address TEXT NOT NULL,
+	provider_type TEXT NOT NULL,
+
+	CHECK (provider_type IN ('mock', 'manual_imap_smtp'))
 );
 
 CREATE TABLE email_folders (
@@ -12,6 +15,8 @@ CREATE TABLE email_folders (
 	parent_id INTEGER,
 	email_account_id INTEGER NOT NULL,
     name TEXT NOT NULL,
+
+    UNIQUE(parent_id, email_account_id, name),
 
     FOREIGN KEY (email_account_id) REFERENCES email_accounts (id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES email_folders (id) ON DELETE CASCADE
@@ -63,6 +68,5 @@ CREATE TABLE email_tags_refs (
 
     PRIMARY KEY (email_id, folder_id),
 
-    FOREIGN KEY (email_id) REFERENCES emails (id) ON DELETE CASCADE,
     FOREIGN KEY (folder_id) REFERENCES email_folders (id) ON DELETE CASCADE
 );

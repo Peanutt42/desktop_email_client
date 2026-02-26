@@ -8,22 +8,22 @@ pub fn EmailView(email: &Email) -> Html {
 	html! {
 		<div class="flex flex-col w-full h-full">
 			<div class="border-b border-accent flex flex-row">
-				<EmailAvatar big=true name={email.author_name.clone()} />
+				<EmailAvatar big=true name={email.envelope.author_name.clone()} />
 
 				<div class="p-3">
 					<div class="text-xl font-bold break-normal">
-						{&email.subject}
+						{&email.envelope.subject}
 					</div>
 
 					<div class="flex flex-row gap-1.5">
 						<div class="select-none">{ "From: " }</div>
 
-						<div class="text-nowrap">{ format!("{} ({})", email.author_name, email.author_address) }</div>
+						<div class="text-nowrap">{ format!("{} ({})", email.envelope.author_name, email.envelope.author_address) }</div>
 					</div>
 				</div>
 			</div>
 
-			<div class="p-2 h-full">
+			<div class="p-2 h-full flex flex-col overflow-y-auto">
 				<EmailBodyView email={email.clone()} />
 			</div>
 		</div>
@@ -35,7 +35,7 @@ pub fn EmailView(email: &Email) -> Html {
 pub fn EmailBodyView(email: &Email) -> Html {
 	match email.body.clone() {
 		EmailBody::TextOnly(text_body) => html! {
-			<div class="whitespace-break-spaces">{ text_body }</div>
+			<div class="whitespace-break-spaces overflow-y-auto box-border">{ text_body }</div>
 		},
 		EmailBody::Html(html_body) => html! {
 			<iframe

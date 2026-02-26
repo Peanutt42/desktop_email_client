@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tINSERT INTO email_folders (parent_id, email_account_id, name)\n\t\t\tVALUES (?1, ?2, ?3)\n\t\t\tON CONFLICT (parent_id, email_account_id, name) DO UPDATE SET parent_id = ?1, email_account_id = ?2, name = ?3\n\t\t\tRETURNING id\n\t\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "6d21d64f8d3ac5e586d9f74d3a434be6103b2d7edd34d4ec17d6475e71fd7cba"
+}

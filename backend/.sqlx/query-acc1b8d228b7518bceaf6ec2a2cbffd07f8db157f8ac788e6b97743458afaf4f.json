@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\t\t\tSELECT\n\t\t\t\t\t\te.id,\n\t\t\t\t\t\te.email_account_id,\n\t\t\t\t\t\te.author_name,\n\t\t\t\t\t\te.author_address,\n\t\t\t\t\t\te.subject,\n\t\t\t\t\t\te.body_summary,\n\t\t\t\t\t\te.sent_time,\n\t\t\t\t\t\te.read,\n\t\t\t\t\t\te.folder_id,\n\t\t\t\t\t\t-- Ensure we get '[]' instead of '[null]' when no tags exist\n\t\t\t\t\t\tCOALESCE(\n\t\t\t\t\t\t\t(SELECT json_group_array(f.name)\n\t\t\t\t\t\t\tFROM email_tags_refs etr\n\t\t\t\t\t\t\tJOIN email_folders f ON etr.folder_id = f.id\n\t\t\t\t\t\t\tWHERE etr.email_id = e.id),\n\t\t\t\t\t\t\t'[]'\n\t\t\t\t\t\t) as \"tags!\"\n\t\t\t\t\tFROM emails e\n\t\t\t\t\tJOIN emails_fts fts ON e.id = fts.rowid\n\t\t\t\t\tWHERE emails_fts MATCH ?\n\t\t\t\t\tORDER BY rank\n\t\t\t\t\t",
+  "query": "\n\t\t\t\t\tSELECT\n\t\t\t\t\t\te.id,\n\t\t\t\t\t\te.email_account_id,\n\t\t\t\t\t\te.author_name,\n\t\t\t\t\t\te.author_address,\n\t\t\t\t\t\te.subject,\n\t\t\t\t\t\te.body_summary,\n\t\t\t\t\t\te.sent_time,\n\t\t\t\t\t\te.read,\n\t\t\t\t\t\t-- Ensure we get '[]' instead of '[null]' when no tags exist\n\t\t\t\t\t\tCOALESCE(\n\t\t\t\t\t\t\t(SELECT json_group_array(f.name)\n\t\t\t\t\t\t\tFROM email_tags_refs etr\n\t\t\t\t\t\t\tJOIN email_folders f ON etr.folder_id = f.id\n\t\t\t\t\t\t\tWHERE etr.email_id = e.id),\n\t\t\t\t\t\t\t'[]'\n\t\t\t\t\t\t) as \"tags!\"\n\t\t\t\t\tFROM emails e\n\t\t\t\t\tJOIN emails_fts fts ON e.id = fts.rowid\n\t\t\t\t\tWHERE emails_fts MATCH ?\n\t\t\t\t\tORDER BY rank\n\t\t\t\t\t",
   "describe": {
     "columns": [
       {
@@ -44,13 +44,8 @@
         "type_info": "Bool"
       },
       {
-        "name": "folder_id",
-        "ordinal": 8,
-        "type_info": "Integer"
-      },
-      {
         "name": "tags!",
-        "ordinal": 9,
+        "ordinal": 8,
         "type_info": "Text"
       }
     ],
@@ -66,9 +61,8 @@
       true,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "3114eb4e61943135502b6de5c63d65ccf4709c2ec6f9f5b1579872289f3ebd90"
+  "hash": "acc1b8d228b7518bceaf6ec2a2cbffd07f8db157f8ac788e6b97743458afaf4f"
 }

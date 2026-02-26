@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT address, provider_type FROM email_accounts WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "address",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "provider_type",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "e81079254ee2dc10bfa883d9e4a83953a02087320c82a66da6ee4a3df45afb21"
+}
