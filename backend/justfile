@@ -1,6 +1,6 @@
 # Creates dev_db.sqlite, used by sqlx to check sql queries at comp time (deletes existing db)
 create-dev-db:
     @echo "Deleting old dev_db.sqlite"
-    @- rm ./dev_db.sqlite* 2>&1 1> /dev/null
+    @- rm ./dev_db.sqlite* > /dev/null 2>&1
     sqlx database create
     sqlx migrate run

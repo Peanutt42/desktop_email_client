@@ -12,10 +12,10 @@ cargo install trunk
 cargo install tauri-cli --version "^2.0.0" --locked
 ```
 
-Or, if you use NixOS, you can just use the `shell.nix`:
+Or, if you use NixOS, you can just use the `flake.nix`:
 
 ```bash
-nix-shell nix.shell
+nix develop
 ```
 
 
