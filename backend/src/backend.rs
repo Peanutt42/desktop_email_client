@@ -6,8 +6,8 @@ use std::{
 
 use async_trait::async_trait;
 use desktop_email_client_shared::{
-	Api, DatabaseChangedEvent, EmailAccount, EmailFilter, EmailFolder, EmailInfo, EmailProvider,
-	EmailProviderType, EmailRow, ReceivedEmail,
+	Api, DatabaseChangedEvent, DatabaseTable, EmailAccount, EmailFilter, EmailFolder, EmailInfo,
+	EmailProvider, EmailProviderType, EmailRow, ReceivedEmail,
 };
 
 use crate::{
@@ -22,8 +22,10 @@ pub struct BackendInner {
 	imap_listeners: Arc<RwLock<HashMap<i64, ImapListener>>>,
 }
 impl BackendInner {
-	pub fn on_database_update(&self, event: DatabaseChangedEvent) {
-		(self.on_database_update_callback)(event);
+	pub fn on_database_table_changed(&self, table: DatabaseTable) {
+		(self.on_database_update_callback)(DatabaseChangedEvent {
+			changed_table: table,
+		});
 	}
 
 	pub async fn receive_email(&self, email: ReceivedEmail) {
@@ -32,7 +34,8 @@ impl BackendInner {
 			.insert_email_folder(email.email_account_id, email.folder_name)
 			.await;
 
-		self.database
+		let _email_id = self
+			.database
 			.insert_email(
 				email.email_account_id,
 				email.envelope,
@@ -41,10 +44,7 @@ impl BackendInner {
 			)
 			.await;
 
-		self.on_database_update(DatabaseChangedEvent::EmailsChanged {
-			email_account_id: email.email_account_id,
-			affected_email_folder_id: folder_id,
-		});
+		self.on_database_table_changed(DatabaseTable::Emails);
 	}
 }
 
@@ -124,7 +124,7 @@ impl Api for Backend {
 			.await;
 
 		self.inner
-			.on_database_update(DatabaseChangedEvent::EmailAccountsChanged);
+			.on_database_table_changed(DatabaseTable::EmailAccounts);
 
 		email_account_id
 	}
@@ -170,7 +170,7 @@ impl Api for Backend {
 		}
 
 		self.inner
-			.on_database_update(DatabaseChangedEvent::EmailAccountsChanged);
+			.on_database_table_changed(DatabaseTable::EmailAccounts);
 	}
 
 	async fn get_email_accounts(&self) -> Vec<EmailAccount> {
@@ -219,7 +219,6 @@ impl Api for Backend {
 	}
 	async fn mark_email_read(&self, email_id: i64) {
 		self.inner.database.mark_email_read(email_id).await;
-		// TODO: call self.inner.on_database_update call, just need more info for that or add
-		// an event variant
+		self.inner.on_database_table_changed(DatabaseTable::Emails);
 	}
 }

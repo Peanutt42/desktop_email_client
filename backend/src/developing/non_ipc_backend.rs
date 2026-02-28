@@ -11,6 +11,7 @@ use desktop_email_client_backend::{
 	},
 	init_tracing,
 };
+use desktop_email_client_shared::DatabaseChangedEvent;
 use std::sync::Arc;
 
 #[actix_web::main]
@@ -28,7 +29,9 @@ async fn main() -> std::io::Result<()> {
 		database.populate_with_mock_data().await;
 	}
 
-	let backend = Arc::new(Backend::new(database).await);
+	let on_database_update = move |_event: DatabaseChangedEvent| {};
+
+	let backend = Arc::new(Backend::new(database, Box::new(on_database_update)).await);
 
 	HttpServer::new(move || {
 		let cors = Cors::default()

@@ -1,4 +1,5 @@
-use desktop_email_client_shared::{DEV_NON_IPC_API_ROUTE, Request, Response};
+use desktop_email_client_shared::{DEV_NON_IPC_API_ROUTE, DatabaseChangedEvent, Request, Response};
+use yew::prelude::*;
 
 pub async fn invoke_backend_api(request: Request) -> Response {
 	tracing::debug!("invoking {}", request);
@@ -13,4 +14,9 @@ pub async fn invoke_backend_api(request: Request) -> Response {
 		.json()
 		.await
 		.expect("failed to deserialize response of backend api")
+}
+
+#[hook]
+pub fn use_db_listen(_callback: impl Fn(DatabaseChangedEvent) + Clone + 'static) {
+	// TODO
 }

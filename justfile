@@ -1,12 +1,12 @@
 alias d := dev
 
 # Develop in the tauri dev window
-dev:
-    RUST_LOG="info,desktop_email_backend=debug" cargo tauri dev
+dev extra_tauri_flags="":
+    RUST_LOG="info,desktop_email_client_backend=debug" cargo tauri dev {{ extra_tauri_flags }}
 
 # Develop inside the browser for faster hotreloading and nicer debug tools
 browser-dev extra_trunk_flags="":
-    cd backend && RUST_LOG="info,desktop_email_backend=debug" cargo r --bin non_ipc_backend --features non_ipc_backend &
+    cd backend && RUST_LOG="info,desktop_email_client_backend=debug" cargo r --bin non_ipc_backend --features non_ipc_backend &
     cd frontend && trunk serve --features non_ipc_backend {{ extra_trunk_flags }}
 
 # Builds and installs the app as rpm (only for systems with dnf installed)

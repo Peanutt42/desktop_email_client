@@ -3,9 +3,11 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// guaranteed to be max 50 chars
+/// guaranteed to be max 75 chars
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmailBodySummary(String);
 impl EmailBodySummary {
+	pub const MAX_CHARS: usize = 75;
 	pub fn as_str(&self) -> &str {
 		self.0.as_str()
 	}
@@ -13,13 +15,13 @@ impl EmailBodySummary {
 		self.0
 	}
 }
-impl TryFrom<&str> for EmailBodySummary {
+impl TryFrom<String> for EmailBodySummary {
 	type Error = &'static str;
-	fn try_from(value: &str) -> Result<Self, Self::Error> {
-		if value.len() > 50 {
+	fn try_from(value: String) -> Result<Self, Self::Error> {
+		if value.len() > Self::MAX_CHARS {
 			Err("Summary too long")
 		} else {
-			Ok(Self(value.to_string()))
+			Ok(Self(value))
 		}
 	}
 }
@@ -46,16 +48,19 @@ impl EmailBody {
 		}
 	}
 	/// TODO: Add body summary extraction from html body
-	// summary is max 50 chars
+	// summary is max 75 chars
 	pub fn extract_summary(&self) -> Option<EmailBodySummary> {
 		match self {
-			Self::TextOnly(text) => text
-				.chars()
-				.take(50)
-				.collect::<String>()
-				.as_str()
-				.try_into()
-				.ok(),
+			Self::TextOnly(text) => {
+				let mut summary = text
+					.chars()
+					.take(EmailBodySummary::MAX_CHARS)
+					.collect::<String>();
+				if text.len() > EmailBodySummary::MAX_CHARS {
+					summary.replace_range(EmailBodySummary::MAX_CHARS - 3.., "...");
+				}
+				summary.try_into().ok()
+			}
 			Self::Html(_) => None,
 		}
 	}
@@ -100,8 +105,7 @@ pub struct EmailInfo {
 	pub email_account_id: i64,
 	#[serde(flatten)]
 	pub envelope: EmailEnvelope,
-	/// limited to 50 chars
-	pub body_summary: Option<String>,
+	pub body_summary: Option<EmailBodySummary>,
 	pub read: bool,
 	pub tags: Vec<String>,
 }

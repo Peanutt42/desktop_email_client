@@ -32,7 +32,7 @@ CREATE TABLE emails (
 	is_body_html BOOLEAN NOT NULL,
 	body TEXT NOT NULL,
 	-- NULL <=> no summary available
-	body_summary VARCHAR(50) DEFAULT NULL,
+	body_summary VARCHAR(75) DEFAULT NULL,
 	-- stored in UTC timezone
 	sent_time DATETIME NOT NULL,
 	read BOOLEAN NOT NULL DEFAULT FALSE,

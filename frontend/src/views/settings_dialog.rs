@@ -1,7 +1,6 @@
-#[cfg(not(feature = "non_ipc_backend"))]
-use crate::api::use_db_listen;
-use desktop_email_client_shared::{ApiClient, DatabaseChangedEvent, EmailAccount};
-use yew::{prelude::*, suspense::use_future};
+use crate::api::use_email_accounts;
+use desktop_email_client_shared::{ApiClient, EmailAccount};
+use yew::prelude::*;
 use yew_autoprops::autoprops;
 
 use crate::{use_app_state, views::AddEmailAccountScreen};
@@ -83,37 +82,7 @@ pub fn SettingsDialog(node_ref: &NodeRef) -> Html {
 #[autoprops]
 #[component]
 fn EmailAccountsSettings(add_email_account_callback: Callback<()>) -> HtmlResult {
-	let app_state = use_app_state();
-	let api_client = app_state.api_client;
-
-	// let email_accounts = use_future(|| app_state.api_client.get_email_accounts())?;
-
-	let email_accounts = use_state(|| Vec::new());
-
-	use_effect_with((), {
-		let email_accounts = email_accounts.clone();
-		let api_client = api_client.clone();
-		move |_| {
-			wasm_bindgen_futures::spawn_local(async move {
-				email_accounts.set(api_client.get_email_accounts().await);
-			});
-		}
-	});
-
-	#[cfg(not(feature = "non_ipc_backend"))]
-	use_db_listen(Callback::from({
-		let email_accounts = email_accounts.clone();
-		let api_client = api_client.clone();
-		move |event| {
-			if matches!(event, DatabaseChangedEvent::EmailAccountsChanged) {
-				let email_accounts = email_accounts.clone();
-				let api_client = api_client.clone();
-				wasm_bindgen_futures::spawn_local(async move {
-					email_accounts.set(api_client.get_email_accounts().await);
-				});
-			}
-		}
-	}));
+	let email_accounts = use_email_accounts();
 
 	Ok(html! {
 		<div class="flex flex-col w-full gap-4">
@@ -173,6 +142,7 @@ fn EmailAccountSettings(email_account: &EmailAccount) -> Html {
 				<h2 class="card-title">{name}</h2>
 				<p>{address}</p>
 				<div class="card-actions">
+					// TODO: implement edit of email accounts in settings dialog
 					<button class="btn btn-sm btn-primary" disabled=true>
 						<img src="/static/icons/pencil-square.svg" />
 						{"Edit"}

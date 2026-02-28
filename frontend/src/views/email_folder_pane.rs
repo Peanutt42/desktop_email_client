@@ -1,18 +1,17 @@
-use desktop_email_client_shared::{ApiClient as _, EmailFolder};
-use yew::{
-	prelude::*,
-	suspense::{use_future, use_future_with},
-};
+use desktop_email_client_shared::EmailFolder;
+use yew::prelude::*;
 use yew_autoprops::autoprops;
 
-use crate::{AppState, use_app_state, views::show_settings_dialog};
+use crate::{
+	AppState,
+	api::{use_email_accounts, use_email_folders},
+	use_app_state,
+	views::show_settings_dialog,
+};
 
 #[component]
 pub fn EmailFolderPane() -> HtmlResult {
-	let app_state = use_app_state();
-	let api_client = &app_state.api_client;
-
-	let email_accounts = use_future(|| api_client.get_email_accounts())?;
+	let email_accounts = use_email_accounts();
 
 	let email_account_name_styling = "text-wrap-mode: nowrap; white-space-collapse: preserve; user-select: none; font-size: var(--font-base);";
 
@@ -24,7 +23,6 @@ pub fn EmailFolderPane() -> HtmlResult {
 						folder_name="All"
 						on_select_folder_id={None}
 						count=420
-						app_state={app_state.clone()}
 					/>
 
 					<ToggleEmailSearchbarButton />
@@ -99,11 +97,7 @@ fn ToggleEmailSearchbarButton() -> Html {
 #[autoprops]
 #[component]
 fn EmailFolders(email_account_id: i64) -> HtmlResult {
-	let app_state = use_app_state();
-	let api_client = &app_state.api_client;
-	let folders = use_future_with(email_account_id, |email_account_id| {
-		api_client.get_email_folders(*email_account_id)
-	})?;
+	let folders = use_email_folders(email_account_id);
 
 	Ok(html! {
 		<div class="flex flex-col gap-1">
@@ -112,7 +106,6 @@ fn EmailFolders(email_account_id: i64) -> HtmlResult {
 				<FullEmailFolderView
 					folder={folder.clone()}
 					count=42
-					app_state={app_state.clone()}
 				/>
 			}
 		</div>
@@ -121,18 +114,13 @@ fn EmailFolders(email_account_id: i64) -> HtmlResult {
 
 #[autoprops]
 #[component]
-fn FullEmailFolderView(
-	folder: &EmailFolder,
-	count: usize,
-	app_state: &UseStateHandle<AppState>,
-) -> Html {
+fn FullEmailFolderView(folder: &EmailFolder, count: usize) -> Html {
 	html! {
 		<div class="flex flex-col gap-1">
 			<EmailFolderView
 				folder_name={folder.name.clone()}
 				on_select_folder_id={Some(folder.id)}
 				count={count}
-				app_state={app_state.clone()}
 			/>
 
 			if !folder.subfolders.is_empty() {
@@ -143,7 +131,6 @@ fn FullEmailFolderView(
 						<FullEmailFolderView
 							folder={subfolder.clone()}
 							count={42}
-							app_state={app_state.clone()}
 						/>
 					}
 				</div>
@@ -155,30 +142,25 @@ fn FullEmailFolderView(
 /// `on_select_folder_uuid`: None means All, see `AppState::selected_email_folder_uuid`
 #[autoprops]
 #[component]
-fn EmailFolderView(
-	folder_name: &String,
-	on_select_folder_id: &Option<i64>,
-	count: usize,
-	app_state: &UseStateHandle<AppState>,
-) -> Html {
+fn EmailFolderView(folder_name: &String, on_select_folder_id: &Option<i64>, count: usize) -> Html {
+	let app_state = use_app_state();
 	let on_select_folder_id = *on_select_folder_id;
-	let on_click = {
-		let app_state = app_state.clone();
-		move |_| {
-			app_state.set(AppState {
-				selected_email_folder_id: on_select_folder_id,
-				..((*app_state).clone())
-			});
-		}
-	};
 
 	let selected = app_state.selected_email_folder_id == on_select_folder_id;
+
+	let on_click = move || {
+		app_state.set(AppState {
+			selected_email_folder_id: on_select_folder_id,
+			..((*app_state).clone())
+		});
+	};
 
 	html! {
 		<div class="w-full">
 			<button
 				class={classes!("btn", if selected { "bg-accent" } else { "bg-transparent" }, "hover:bg-accent", "border-0", "w-full")}
-				onclick={on_click}
+				onmousedown={let on_click = on_click.clone(); move |_| on_click()}
+				ontouchstart={move |_| on_click()}
 			>
 				<img src="/static/icons/inbox.svg" width="16px" height="16px" class="w-4 h-4 shrink-0 gap-1" />
 				<div class="truncate">{folder_name}</div>

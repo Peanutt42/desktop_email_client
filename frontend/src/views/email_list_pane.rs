@@ -1,7 +1,9 @@
-use crate::{AppState, pretty_format_date_time, use_app_state, views::EmailAvatar};
-use desktop_email_client_shared::{ApiClient, EmailFilter, EmailInfo};
+use crate::{
+	AppState, api::use_emails, pretty_format_date_time, use_app_state, views::EmailAvatar,
+};
+use desktop_email_client_shared::{ApiClient, EmailBodySummary, EmailFilter, EmailInfo};
 use web_sys::HtmlInputElement;
-use yew::{prelude::*, suspense::use_future_with};
+use yew::prelude::*;
 use yew_autoprops::autoprops;
 
 #[component]
@@ -101,45 +103,39 @@ fn EmailListItems() -> Html {
 
 #[autoprops]
 #[component]
-fn EmailMatchingSearchResultList(search: AttrValue) -> HtmlResult {
+fn EmailMatchingSearchResultList(search: AttrValue) -> Html {
 	let state = use_app_state();
-	let api_client = &state.api_client;
-	let search_results = use_future_with(search, |search| {
-		api_client.get_emails(EmailFilter::MatchingSearch {
-			search: search.to_string(),
-		})
-	})?;
+	let search_results = use_emails(EmailFilter::MatchingSearch {
+		search: search.to_string(),
+	});
 
-	Ok(html! {
+	html! {
 		for email_info in search_results.iter() {
 			<EmailListItem
 				email_info={email_info.clone()}
 				selected={state.selected_email_id == Some(email_info.email_id)}
 			/>
 		}
-	})
+	}
 }
 
 #[component]
-fn EmailListOfSelectedFolder() -> HtmlResult {
+fn EmailListOfSelectedFolder() -> Html {
 	let state = use_app_state();
-	let api_client = &state.api_client;
-	let search_results =
-		use_future_with(state.selected_email_folder_id, |selected_email_folder_id| {
-			api_client.get_emails(match *selected_email_folder_id {
-				Some(folder_id) => EmailFilter::Folder { folder_id },
-				None => EmailFilter::Any,
-			})
-		})?;
+	let email_filter = match state.selected_email_folder_id {
+		Some(folder_id) => EmailFilter::Folder { folder_id },
+		None => EmailFilter::Any,
+	};
+	let search_results = use_emails(email_filter);
 
-	Ok(html! {
+	html! {
 		for email_info in search_results.iter() {
 			<EmailListItem
 				email_info={email_info.clone()}
 				selected={state.selected_email_id == Some(email_info.email_id)}
 			/>
 		}
-	})
+	}
 }
 
 #[autoprops]
@@ -152,7 +148,7 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 	let app_state = use_app_state();
 	let api_client = app_state.api_client;
 	let email_id = email_info.email_id;
-	let on_click = move |_e| {
+	let on_click = move || {
 		// TODO: wait a bit
 		wasm_bindgen_futures::spawn_local(api_client.mark_email_read(email_id));
 
@@ -167,14 +163,15 @@ fn EmailListItem(email_info: &EmailInfo, selected: bool) -> HtmlResult {
 		<button
 			key={format!("{}", email_id)}
 			class={if selected { selected_classes } else { not_selected_classes }}
-			onclick={on_click}
+			onmousedown={let on_click = on_click.clone(); move |_| on_click()}
+			ontouchstart={move |_| on_click()}
 		>
 			<div class="flex flex-row items-center gap-2 w-full">
 				<EmailAvatar name={email_info.envelope.author_name.clone()} />
 				<div class="font-semibold truncate">{ &email_info.envelope.subject }</div>
 			</div>
-			if let Some(body_summary) = &email_info.body_summary {
-				<small class="truncate nowrap block text-start">{body_summary}</small>
+			if let Some(body_summary) = email_info.body_summary.as_ref().map(EmailBodySummary::as_str) {
+				<small class="truncate nowrap block text-start">{body_summary.to_string()}</small>
 			}
 			<div class="flex flex-row items-center gap-1">
 				for tag_name in email_info.tags.iter() {

@@ -10,18 +10,17 @@ pub enum EmailFilter {
 
 pub const DATABASE_CHANGED_EVENT_NAME: &str = "database_changed";
 
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum DatabaseTable {
+	EmailAccounts,
+	EmailFolders,
+	Emails,
+}
+
 /// events that get emitted by backend
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub enum DatabaseChangedEvent {
-	EmailAccountsChanged,
-	EmailFolderChanged {
-		email_account_id: i64,
-		email_folder_id: i64,
-	},
-	EmailsChanged {
-		email_account_id: i64,
-		affected_email_folder_id: i64,
-	},
+pub struct DatabaseChangedEvent {
+	pub changed_table: DatabaseTable,
 }
 
 api! {
@@ -30,7 +29,7 @@ api! {
 	async fn get_email_accounts() -> Vec<EmailAccount>;
 	async fn get_email(email_id: i64) -> Option<EmailRow>;
 	async fn get_emails(email_filter: EmailFilter) -> Vec<EmailInfo>;
-	async fn get_email_folders(email_id: i64) -> Vec<EmailFolder>;
+	async fn get_email_folders(email_account_id: i64) -> Vec<EmailFolder>;
 	async fn mark_email_read(email_id: i64) -> ();
 }
 

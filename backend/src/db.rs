@@ -519,7 +519,7 @@ impl TryFrom<EmailInfoRow> for EmailInfo {
 				subject: value.subject,
 				sent_time: value.sent_time.and_utc(),
 			},
-			body_summary: value.body_summary,
+			body_summary: value.body_summary.and_then(|str| str.try_into().ok()),
 			read: value.read,
 			tags,
 		})

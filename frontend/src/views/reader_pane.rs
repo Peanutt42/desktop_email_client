@@ -1,8 +1,7 @@
-use desktop_email_client_shared::ApiClient;
-use yew::{prelude::*, suspense::use_future_with};
+use yew::prelude::*;
 use yew_autoprops::autoprops;
 
-use crate::{use_app_state, views::EmailView};
+use crate::{api::use_email_row, use_app_state, views::EmailView};
 
 #[component]
 pub fn ReaderPane() -> Html {
@@ -28,17 +27,15 @@ pub fn ReaderPane() -> Html {
 
 #[autoprops]
 #[component]
-fn ReaderPaneContent(email_id: &i64) -> HtmlResult {
-	let state = use_app_state();
-	let api_client = &state.api_client;
-	let email_row = use_future_with(*email_id, |email_id| api_client.get_email(*email_id))?;
+fn ReaderPaneContent(email_id: &i64) -> Html {
+	let email_row = use_email_row(*email_id);
 
-	Ok(match email_row.as_ref() {
+	match email_row.as_ref() {
 		Some(email_row) => html! {
 			<EmailView email={email_row.email.clone()} />
 		},
 		None => html! {
 			<p class="p-3 w-full h-full flex items-center justify-center select-none">{ "Email not found" }</p>
 		},
-	})
+	}
 }
