@@ -7,12 +7,14 @@ use actix_web::{
 use desktop_email_client_backend::{
 	Backend, Database,
 	api::{
-		DEV_NON_IPC_BACKEND_PORT, DEV_NON_IPC_FRONTEND_PORT, configure_actix_backend_api_routes,
+		DEV_NON_IPC_BACKEND_PORT, DEV_NON_IPC_FRONTEND_PORT, DatabaseChangedSseState,
+		configure_actix_backend_api_routes,
 	},
 	init_tracing,
 };
 use desktop_email_client_shared::DatabaseChangedEvent;
 use std::sync::Arc;
+use tokio::sync::broadcast;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -29,7 +31,17 @@ async fn main() -> std::io::Result<()> {
 		database.populate_with_mock_data().await;
 	}
 
-	let on_database_update = move |_event: DatabaseChangedEvent| {};
+	let (database_changed_tx, database_changed_rx) = broadcast::channel(10);
+	let database_changed_sse_state = DatabaseChangedSseState {
+		database_changed_rx,
+	};
+	let on_database_update = move |event: DatabaseChangedEvent| {
+		tracing::debug!("emit db update: {:?}", event);
+
+		if let Err(e) = database_changed_tx.send(event) {
+			tracing::error!("failed to broadcast database changed event to SSE: {}", e);
+		}
+	};
 
 	let backend = Arc::new(Backend::new(database, Box::new(on_database_update)).await);
 
@@ -43,6 +55,7 @@ async fn main() -> std::io::Result<()> {
 		App::new()
 			.wrap(cors)
 			.app_data(Data::new(backend.clone()))
+			.app_data(Data::new(database_changed_sse_state.clone()))
 			.configure(configure_actix_backend_api_routes)
 	})
 	.bind(("localhost", DEV_NON_IPC_BACKEND_PORT))?

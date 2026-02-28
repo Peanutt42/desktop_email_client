@@ -28,9 +28,10 @@ yew-hooks = "0.4.0"
 wasm-bindgen-futures = { workspace = true }
 futures-util = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
 serde-wasm-bindgen = { workspace = true }
 async-trait = { workspace = true }
 
 [features]
 default = []
-non_ipc_backend = ["gloo-net"]
+non_ipc_backend = ["gloo-net", "serde_json"]

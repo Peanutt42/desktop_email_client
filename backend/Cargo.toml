@@ -23,7 +23,9 @@ fuzzy-matcher = "0.3.7"
 chrono = { workspace = true }
 actix-web = { version = "4", optional = true }
 actix-cors = { version = "0.7.1", optional = true }
+actix-web-lab = { version = "0.25.0", optional = true }
 async-trait = { workspace = true }
+async-stream = { version = "0.3.6", optional = true }
 sqlx = { version = "0.8.6", features = [
 	"macros",
 	"sqlite",
@@ -45,4 +47,4 @@ tauri-build = { version = "2.5.3", features = [] }
 
 [features]
 default = []
-non_ipc_backend = ["actix-web", "actix-cors", "dotenvy"]
+non_ipc_backend = ["actix-web", "actix-cors", "actix-web-lab", "async-stream" , "dotenvy"]

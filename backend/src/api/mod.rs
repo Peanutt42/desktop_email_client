@@ -1,7 +1,7 @@
 #[cfg(feature = "non_ipc_backend")]
 mod actix_non_ipc_api;
 #[cfg(feature = "non_ipc_backend")]
-pub use actix_non_ipc_api::configure_actix_backend_api_routes;
+pub use actix_non_ipc_api::{DatabaseChangedSseState, configure_actix_backend_api_routes};
 
 #[cfg(not(feature = "non_ipc_backend"))]
 mod tauri_ipc_api;
