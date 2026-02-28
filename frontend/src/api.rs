@@ -1,16 +1,68 @@
-#[cfg(feature = "non_ipc_backend")]
-mod actix_non_ipc_api;
-#[cfg(feature = "non_ipc_backend")]
-use actix_non_ipc_api::invoke_backend_api;
-#[cfg(feature = "non_ipc_backend")]
-pub use actix_non_ipc_api::use_db_listen;
+use crate::{app::use_db_context, use_app_state};
+use desktop_email_client_shared::{
+	API_ROUTE, ApiClient, DATABASE_CHANGED_EVENT_NAME, DatabaseChangedEvent, DatabaseTable,
+	EmailAccount, EmailFilter, EmailFolder, EmailInfo, EmailRow, Request, Response,
+};
+use gloo::events::EventListener;
+use std::cell::RefCell;
+use std::rc::Rc;
+use web_sys::wasm_bindgen::JsCast;
+use yew::prelude::*;
 
-#[cfg(not(feature = "non_ipc_backend"))]
-mod tauri_ipc_api;
-#[cfg(not(feature = "non_ipc_backend"))]
-use tauri_ipc_api::invoke_backend_api;
-#[cfg(not(feature = "non_ipc_backend"))]
-pub use tauri_ipc_api::use_db_listen;
+pub async fn invoke_backend_api(request: Request) -> Response {
+	tracing::debug!("invoking {}", request);
+
+	gloo_net::http::Request::post(API_ROUTE)
+		.credentials(web_sys::RequestCredentials::Include)
+		.json(&request)
+		.expect("failed to serialize args to backend api")
+		.send()
+		.await
+		.expect("failed to send backend api request")
+		.json()
+		.await
+		.expect("failed to deserialize response of backend api")
+}
+
+#[hook]
+pub fn use_db_listen(callback: impl Fn(DatabaseChangedEvent) + Clone + 'static) {
+	let callback_ref = use_memo((), |_| Rc::new(RefCell::new(callback.clone())));
+	{
+		let callback_ref = callback_ref.clone();
+		use_effect(move || {
+			*callback_ref.borrow_mut() = callback.clone();
+		});
+	}
+	{
+		let callback_ref = callback_ref.clone();
+		use_effect_with((), move |_| {
+			let active = Rc::new(RefCell::new(true));
+			let active_inner = active.clone();
+
+			let api_route = format!("{}/{}", API_ROUTE, DATABASE_CHANGED_EVENT_NAME);
+			let event_source =
+				web_sys::EventSource::new(&api_route).expect("failed to connect to SSE endpoint");
+
+			let listener = EventListener::new(&event_source, "message", move |event| {
+				if !*active_inner.borrow() {
+					return;
+				}
+				let event = event.dyn_ref::<web_sys::MessageEvent>().unwrap();
+				let data = event.data().as_string().expect("SSE data is not a string");
+				match serde_json::from_str::<DatabaseChangedEvent>(&data) {
+					Ok(db_event) => (callback_ref.borrow())(db_event),
+					Err(e) => tracing::error!("failed to parse SSE event: {}", e),
+				}
+			});
+
+			move || {
+				*active.borrow_mut() = false;
+				drop(listener); // cleanup is automatic
+				event_source.close();
+			}
+		});
+	}
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct FrontendApiClient;
@@ -21,13 +73,6 @@ impl ApiClient for FrontendApiClient {
 		invoke_backend_api(request).await
 	}
 }
-
-use crate::{app::use_db_context, use_app_state};
-use desktop_email_client_shared::{
-	ApiClient, DatabaseTable, EmailAccount, EmailFilter, EmailFolder, EmailInfo, EmailRow, Request,
-	Response,
-};
-use yew::prelude::*;
 
 #[hook]
 pub fn use_db_resource<D, R, F, Fut>(

@@ -6,8 +6,8 @@ pub use email::{
 
 mod api;
 pub use api::{
-	Api, ApiClient, DATABASE_CHANGED_EVENT_NAME, DEV_NON_IPC_API_ROUTE, DatabaseChangedEvent,
-	DatabaseTable, EmailFilter, Request, Response, TauriCommandArgsWrapper,
+	API_ROUTE, Api, ApiClient, DATABASE_CHANGED_EVENT_NAME, DatabaseChangedEvent, DatabaseTable,
+	EmailFilter, Request, Response, TauriCommandArgsWrapper,
 };
 
 mod api_macro;

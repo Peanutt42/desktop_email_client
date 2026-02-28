@@ -1,15 +1,30 @@
-alias d := dev
+alias b := build
+alias r := run
 
-# Develop in the tauri dev window
-dev extra_tauri_flags="":
-    RUST_LOG="info,desktop_email_client_backend=debug" cargo tauri dev {{ extra_tauri_flags }}
+# Builds the frontend and backend
+build EXTRA_CARGO_ARGS="":
+	@echo "Building frontend..."
+	cd ./frontend/ && trunk build {{EXTRA_CARGO_ARGS}}
+	@echo "Building backend..."
+	cd ./backend/ && cargo build {{EXTRA_CARGO_ARGS}}
 
-# Develop inside the browser for faster hotreloading and nicer debug tools
-browser-dev extra_trunk_flags="":
-    cd backend && RUST_LOG="info,desktop_email_client_backend=debug" cargo r --bin non_ipc_backend --features non_ipc_backend &
-    cd frontend && trunk serve --features non_ipc_backend {{ extra_trunk_flags }}
+# Serves frontend with hotreloading and runs backend
+browser-dev EXTRA_CARGO_ARGS="":
+	@echo "Builds frontend..."
+	cd ./frontend/ && trunk serve {{EXTRA_CARGO_ARGS}} &
+	@echo "Running backend..."
+	cd ./backend/ && cargo run {{EXTRA_CARGO_ARGS}}
 
-# Builds and installs the app as rpm (only for systems with dnf installed)
-install-rpm:
-    cargo tauri build --bundles rpm
-    sudo dnf reinstall ./target/release/bundle/rpm/Desktop\ Email\ Client-0.1.0-1.x86_64.rpm -y || sudo dnf install ./target/release/bundle/rpm/Desktop\ Email\ Client-0.1.0-1.x86_64.rpm -y
+# Builds frontend and backend and runs the electron app
+run:
+	just build --release
+	@echo "Starting electron app"
+	cd ./electron-shell/ && npm start
+
+# Builds frontend and backend and then bundles the electron app with electron-builder
+# Bundle output is in `dist`
+bundle:
+	just build --release
+	@echo "Bundeling app with electron-builder"
+	cd ./electron-shell/ && npm run build
+	@echo "Finished bundeling app, output is inside `dist`"

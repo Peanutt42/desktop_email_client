@@ -40,4 +40,4 @@ pub struct TauriCommandArgsWrapper<Args> {
 	pub args: Args,
 }
 
-pub const DEV_NON_IPC_API_ROUTE: &str = "/non_ipc_api";
+pub const API_ROUTE: &str = "/api";

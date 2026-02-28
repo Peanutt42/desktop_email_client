@@ -1,8 +1,10 @@
 [tools]
 tailwindcss = "4.0.0"
 
+[serve]
+port = 4242
 
-# only used with the `non_ipc_backend` feature enabled
+# backend api route
 [[proxy]]
-rewrite = "/non_ipc_api"
-backend = "http://localhost:4242/non_ipc_api"
+rewrite = "/api"
+backend = "http://localhost:8080/api"

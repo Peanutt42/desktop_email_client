@@ -3,8 +3,7 @@ use actix_web::Responder;
 use actix_web::web::{Data, Json, ServiceConfig, get, post};
 use actix_web_lab::sse::{self, Sse};
 use desktop_email_client_shared::{
-	Api, DATABASE_CHANGED_EVENT_NAME, DEV_NON_IPC_API_ROUTE, DatabaseChangedEvent, Request,
-	Response,
+	API_ROUTE, Api, DATABASE_CHANGED_EVENT_NAME, DatabaseChangedEvent, Request, Response,
 };
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,7 +11,7 @@ use tokio::sync::broadcast;
 
 pub fn configure_actix_backend_api_routes(service_cfg: &mut ServiceConfig) {
 	service_cfg.route(
-		DEV_NON_IPC_API_ROUTE,
+		API_ROUTE,
 		post().to(
 			async |backend: Data<Arc<Backend>>, request: Json<Request>| -> Json<Response> {
 				let request = request.into_inner();
@@ -24,7 +23,7 @@ pub fn configure_actix_backend_api_routes(service_cfg: &mut ServiceConfig) {
 	);
 
 	service_cfg.route(
-		&format!("{}/{}", DEV_NON_IPC_API_ROUTE, DATABASE_CHANGED_EVENT_NAME),
+		&format!("{}/{}", API_ROUTE, DATABASE_CHANGED_EVENT_NAME),
 		get().to(database_changed_sse),
 	);
 }

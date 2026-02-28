@@ -33,7 +33,7 @@
 
         packages = with pkgs; [
           rustup
-	      cargo-tauri
+          cargo-tauri
           trunk
           sqlx-cli
 
@@ -45,6 +45,10 @@
           libsoup_3
           webkitgtk_6_0
           webkitgtk_4_1
+
+          pkgs.electron
+          pkgs.nodejs
+          pkgs.nodePackages.npm
 
           just
         ];
