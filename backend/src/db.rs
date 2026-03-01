@@ -9,6 +9,7 @@ use futures_util::{StreamExt, stream};
 use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptions};
 
 pub struct Database {
+	db_url: String,
 	pub(crate) db_pool: SqlitePool,
 }
 impl Database {
@@ -17,6 +18,10 @@ impl Database {
 		let url = &format!("sqlite:///{}", sqlite_db_filepath.display());
 
 		Self::init_from_url(url).await
+	}
+
+	pub fn get_url(&self) -> String {
+		self.db_url.clone()
 	}
 
 	/// panics on failure
@@ -40,7 +45,10 @@ impl Database {
 			.await
 			.expect("failed to migrate sqlite db");
 
-		let this = Self { db_pool };
+		let this = Self {
+			db_pool,
+			db_url: url.to_string(),
+		};
 
 		if need_to_create_db {
 			this.populate_with_mock_data().await;

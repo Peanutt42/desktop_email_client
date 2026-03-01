@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
 
-pub fn configure_actix_backend_api_routes(service_cfg: &mut ServiceConfig) {
+pub fn configure_api_routes(service_cfg: &mut ServiceConfig) {
 	service_cfg.route(
 		API_ROUTE,
 		post().to(

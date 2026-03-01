@@ -1,5 +1,5 @@
 mod backend;
-pub use backend::Backend;
+pub use backend::{Backend, run_server};
 
 pub mod api;
 

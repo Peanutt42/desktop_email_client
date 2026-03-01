@@ -1,19 +1,86 @@
-use std::{
-	collections::HashMap,
-	str::FromStr,
-	sync::{Arc, RwLock},
+use actix_cors::Cors;
+use actix_files::Files;
+use actix_web::{
+	App, HttpServer,
+	http::header::{AUTHORIZATION, CONTENT_TYPE},
+	middleware::DefaultHeaders,
+	web::Data,
 };
-
 use async_trait::async_trait;
 use desktop_email_client_shared::{
 	Api, DatabaseChangedEvent, DatabaseTable, EmailAccount, EmailFilter, EmailFolder, EmailInfo,
 	EmailProvider, EmailProviderType, EmailRow, ReceivedEmail,
 };
+use std::{
+	collections::HashMap,
+	path::PathBuf,
+	str::FromStr,
+	sync::{Arc, RwLock},
+};
+use tokio::sync::broadcast;
 
 use crate::{
-	Database, email_account_provider_store::delete_email_account_provider, imap::ImapListener,
+	Database,
+	api::{DatabaseChangedSseState, configure_api_routes},
+	email_account_provider_store::delete_email_account_provider,
+	imap::ImapListener,
 	read_email_account_provider, save_email_account_provider,
 };
+
+pub async fn run_server(
+	database: Database,
+	port: u16,
+	frontend_dist_dir: PathBuf,
+) -> std::io::Result<()> {
+	tracing::info!(
+		"Starting backend server on port {} and with database url '{}'",
+		port,
+		database.get_url()
+	);
+
+	let (database_changed_tx, database_changed_rx) = broadcast::channel(10);
+	let database_changed_sse_state = DatabaseChangedSseState {
+		database_changed_rx,
+	};
+	let on_database_update = move |event: DatabaseChangedEvent| {
+		tracing::debug!("emit db update: {:?}", event);
+
+		if let Err(e) = database_changed_tx.send(event) {
+			tracing::error!("failed to broadcast database changed event to SSE: {}", e);
+		}
+	};
+
+	let backend = Arc::new(Backend::new(database, Box::new(on_database_update)).await);
+
+	HttpServer::new(move || {
+		let cors = Cors::default()
+			.allowed_origin(&format!("http://localhost:{}", port))
+			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+			.allowed_headers(vec![CONTENT_TYPE, AUTHORIZATION])
+			.supports_credentials();
+
+		let cps = DefaultHeaders::new().add((
+			"Content-Security-Policy",
+			"default-src 'self'; \
+                 script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'; \
+                 style-src 'self' 'unsafe-inline'; \
+                 connect-src 'self' http://localhost:8080 ws://localhost:8080; \
+                 img-src 'self' data:; \
+                 font-src 'self' data:;",
+		));
+
+		App::new()
+			.wrap(cors)
+			.wrap(cps)
+			.app_data(Data::new(backend.clone()))
+			.app_data(Data::new(database_changed_sse_state.clone()))
+			.configure(configure_api_routes)
+			.service(Files::new("/", &frontend_dist_dir).index_file("index.html"))
+	})
+	.bind(("localhost", port))?
+	.run()
+	.await
+}
 
 pub struct BackendInner {
 	database: Database,

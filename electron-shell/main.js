@@ -14,23 +14,28 @@ function getBinaryPath() {
   return path.join(__dirname, '..', 'target', 'release', binaryName)
 }
 
-function getDistPath() {
+function getFrontendDistPath() {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "frontend", 'dist')
   }
   return path.join(__dirname, '..', "frontend", 'dist')
 }
 
+function getDatabasePath() {
+  return path.join(app.getPath('userData'), 'db.sqlite')
+}
+
 function startBackend() {
   const binaryPath = getBinaryPath()
-  const distPath = getDistPath()
+  const frontendDistPath = getFrontendDistPath()
 
   backendProcess = spawn(binaryPath, [], {
     stdio: 'inherit',
     env: {
       ...process.env,
-      DIST_PATH: distPath,
+      FRONTEND_DIST_PATH: frontendDistPath,
       PORT: '8080',
+      DATABASE_URL: 'sqlite://' + getDatabasePath(),
       RUST_LOG: 'info,desktop_email_client_backend=debug'
     }
   })

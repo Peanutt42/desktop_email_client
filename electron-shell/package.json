@@ -17,7 +17,7 @@
     "electron-builder": "26.8.1"
   },
   "build": {
-    "appId": "com.github.desktop_email_client",
+    "appId": "com.github.p3anutt42.desktop_email_client",
     "productName": "Desktop Email Client",
     "files": [
       "main.js",
