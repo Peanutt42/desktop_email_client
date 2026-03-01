@@ -30,7 +30,8 @@ function startBackend() {
     env: {
       ...process.env,
       DIST_PATH: distPath,
-      PORT: '8080'
+      PORT: '8080',
+      RUST_LOG: 'info,desktop_email_client_backend=debug'
     }
   })
 
