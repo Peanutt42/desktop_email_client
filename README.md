@@ -4,19 +4,36 @@ Simple, modern looking desktop email client
 
 ### Tools to install
 
-```
-# rust, cargo and just (justfile) should already be installed
-
-cargo install sqlx-cli
-cargo install trunk
-```
-
-Or, if you use NixOS, you can just use the `flake.nix`:
+if you use NixOS, you can just use the `flake.nix`:
 
 ```bash
 nix develop
 ```
 
+Or, for all other distros/platforms:
+
+```
+# rust, cargo, just (justfile) and npm should already be installed on your system
+
+cargo install sqlx-cli
+cargo install trunk
+```
+
+And then install the npm dependencies of the electron app:
+
+```bash
+cd ./electron-shell
+npm install
+```
+
+### How to install the app
+
+```bash
+just bundle
+```
+
+The output will be in `./electron-shell/dist`.
+Then you can just install the file generated, for linux its an AppImage for now so you just run `./electron-shell/dist/Desktop Email Client-0.1.0.AppImage`
 
 ### How to develop
 
@@ -33,7 +50,6 @@ just run
 ```
 
 Develop (inside a browser, with autorebuilding frontend):
-
 
 ```bash
 just browser-dev
