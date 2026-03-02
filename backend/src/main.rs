@@ -5,7 +5,7 @@ use std::path::PathBuf;
 async fn main() -> std::io::Result<()> {
 	init_tracing();
 
-	dotenvy::dotenv().expect("failed to load .env file");
+	let _ = dotenvy::dotenv();
 
 	let frontend_dist_dir =
 		std::env::var("FRONTEND_DIST_PATH").unwrap_or_else(|_| "../frontend/dist".to_string());
@@ -14,7 +14,7 @@ async fn main() -> std::io::Result<()> {
 		.and_then(|port_str| port_str.parse().ok())
 		.unwrap_or(8080);
 
-	let url = dotenvy::var("DATABASE_URL")
+	let url = std::env::var("DATABASE_URL")
 		.expect("`DATABASE_URL` env var not set, please set it (temporary or in .env file)");
 
 	let database = Database::init_from_url(&url).await;

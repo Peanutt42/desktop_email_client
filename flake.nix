@@ -18,10 +18,17 @@
           targets = [ "x86_64-unknown-linux-gnu" "wasm32-unknown-unknown" ];
         };
 
+		libraries = with pkgs; [
+          openssl.out
+		];
+
         packages = with pkgs; [
           rustup
           trunk
           sqlx-cli
+
+          pkg-config
+		  openssl
 
           pkgs.electron
           pkgs.nodejs
@@ -33,6 +40,10 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = packages ++ [ rustToolchain ];
+
+		  shellHook = ''
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+		  '';
         };
       }
     );
