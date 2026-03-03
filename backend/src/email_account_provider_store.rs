@@ -1,4 +1,4 @@
-use desktop_email_client_shared::{EmailProvider, EmailProviderType};
+use desktop_email_client_shared::{EmailProvider, EmailProviderType, Password};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -86,5 +86,5 @@ struct ImapProviderInfo {
 	version: String,
 	host: String,
 	username: String,
-	password: String,
+	password: Password,
 }

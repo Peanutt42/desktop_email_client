@@ -3,6 +3,30 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct Password(String);
+impl std::fmt::Debug for Password {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str("[REDACTED]")
+	}
+}
+impl std::fmt::Display for Password {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str("[REDACTED]")
+	}
+}
+impl Password {
+	pub fn new(password: String) -> Self {
+		Self(password)
+	}
+
+	/// make sure to not accidentally leak or expose the password!
+	pub fn get_confidential_password(&self) -> &str {
+		&self.0
+	}
+}
+
 /// guaranteed to be max 75 chars
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmailBodySummary(String);
@@ -118,15 +142,7 @@ pub struct EmailAccount {
 	pub address: String,
 	pub provider: EmailProvider,
 }
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub enum EmailProvider {
-	ManualImapSmtp {
-		imap_host: String,
-		imap_username: String,
-		imap_password: String,
-	},
-	Mock,
-}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum EmailProviderType {
 	ManualImapSmtp,
@@ -160,6 +176,16 @@ impl FromStr for EmailProviderType {
 			_ => Err(()),
 		}
 	}
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub enum EmailProvider {
+	ManualImapSmtp {
+		imap_host: String,
+		imap_username: String,
+		imap_password: Password,
+	},
+	Mock,
 }
 impl EmailProvider {
 	pub fn get_type(&self) -> EmailProviderType {

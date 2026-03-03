@@ -1,7 +1,7 @@
 mod email;
 pub use email::{
 	Email, EmailAccount, EmailBody, EmailBodySummary, EmailEnvelope, EmailFolder, EmailInfo,
-	EmailProvider, EmailProviderType, EmailRow, ReceivedEmail,
+	EmailProvider, EmailProviderType, EmailRow, Password, ReceivedEmail,
 };
 
 mod api;

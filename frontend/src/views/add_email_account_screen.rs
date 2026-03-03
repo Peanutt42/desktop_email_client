@@ -1,4 +1,4 @@
-use desktop_email_client_shared::{ApiClient, EmailProvider, EmailProviderType};
+use desktop_email_client_shared::{ApiClient, EmailProvider, EmailProviderType, Password};
 use gloo::utils::document;
 use web_sys::{HtmlInputElement, wasm_bindgen::JsCast};
 use yew::prelude::*;
@@ -123,7 +123,7 @@ pub fn AddEmailAccountScreen(close_callback: Callback<()>) -> Html {
 					Some(EmailProvider::ManualImapSmtp {
 						imap_host,
 						imap_username,
-						imap_password,
+						imap_password: Password::new(imap_password),
 					})
 				}
 				_ => None,
