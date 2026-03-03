@@ -18,18 +18,19 @@
           targets = [ "x86_64-unknown-linux-gnu" "wasm32-unknown-unknown" ];
         };
 
-		libraries = with pkgs; [
+        libraries = with pkgs; [
           openssl.out
-		];
+        ];
 
         packages = with pkgs; [
           rustup
           just
 
-		  openssl
+          openssl
+          dbus
 
           # for ./frontend
-		  trunk
+          trunk
 
           # for ./backend
           sqlx-cli
@@ -45,12 +46,12 @@
         devShells.default = pkgs.mkShell {
           buildInputs = packages ++ [ rustToolchain ];
 
-		  shellHook = ''
-		    # prevent npm from downloading electron and using the nixpkg version
-		    export ELECTRON_OVERRIDE_DIST_PATH="${pkgs.electron}/bin"
-			export ELECTRON_SKIP_BINARY_DOWNLOAD=1
-		    export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
-		  '';
+          shellHook = ''
+            # prevent npm from downloading electron and using the nixpkg version
+            export ELECTRON_OVERRIDE_DIST_PATH="${pkgs.electron}/bin"
+            export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+          '';
         };
       }
     );

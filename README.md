@@ -8,6 +8,9 @@ if you use NixOS, you can just use the `flake.nix`:
 
 ```bash
 nix develop
+
+# make sure you have the wasm target installed
+rustup target add wasm32-unknown-unknown
 ```
 
 Or, for all other distros/platforms:
@@ -17,6 +20,9 @@ Or, for all other distros/platforms:
 
 cargo install sqlx-cli
 cargo install trunk
+
+# make sure you have the wasm target installed
+rustup target add wasm32-unknown-unknown
 ```
 
 And then install the npm dependencies of the electron app:
