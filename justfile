@@ -20,7 +20,7 @@ browser-dev EXTRA_CARGO_ARGS="":
 	@echo "Builds frontend..."
 	cd ./frontend/ && trunk serve {{EXTRA_CARGO_ARGS}} &
 	@echo "Running backend..."
-	cd ./backend/ && RUST_LOG="info,desktop_email_client_backend=debug" cargo run {{EXTRA_CARGO_ARGS}}
+	cd ./backend/ && RUST_LOG="info,desktop_email_client_backend=debug" cargo run --features dev_fixed_backend_port {{EXTRA_CARGO_ARGS}}
 
 # Builds frontend and backend and then bundles the electron app with electron-builder
 # Bundle output is in `dist`

@@ -32,3 +32,6 @@ keyring = { version = "3.6.3", features = ["sync-secret-service"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+[features]
+default = []
+dev_fixed_backend_port = []

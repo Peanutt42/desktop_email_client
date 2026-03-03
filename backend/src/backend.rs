@@ -28,8 +28,19 @@ use crate::{
 };
 
 pub async fn run_server(database: Database, frontend_dist_dir: PathBuf) -> std::io::Result<()> {
-	let listener = std::net::TcpListener::bind(("localhost", 0))?;
-	let port = listener.local_addr()?.port();
+	#[cfg(feature = "dev_fixed_backend_port")]
+	let (listener, port) = {
+		let port = 8080;
+		let listener = std::net::TcpListener::bind(("localhost", port))?;
+		(listener, port)
+	};
+
+	#[cfg(not(feature = "dev_fixed_backend_port"))]
+	let (listener, port) = {
+		let listener = std::net::TcpListener::bind(("localhost", 0))?;
+		let port = listener.local_addr()?.port();
+		(listener, port)
+	};
 
 	tracing::info!(
 		"Starting backend server on port {} and with database url '{}'",
