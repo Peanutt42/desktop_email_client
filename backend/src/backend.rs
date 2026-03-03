@@ -27,16 +27,19 @@ use crate::{
 	read_email_account_provider, save_email_account_provider,
 };
 
-pub async fn run_server(
-	database: Database,
-	port: u16,
-	frontend_dist_dir: PathBuf,
-) -> std::io::Result<()> {
+pub async fn run_server(database: Database, frontend_dist_dir: PathBuf) -> std::io::Result<()> {
+	let listener = std::net::TcpListener::bind(("localhost", 0))?;
+	let port = listener.local_addr()?.port();
+
 	tracing::info!(
 		"Starting backend server on port {} and with database url '{}'",
 		port,
 		database.get_url()
 	);
+
+	let port_filepath = std::env::temp_dir().join("desktop_email_client_backend.port");
+	std::fs::write(port_filepath, port.to_string())
+		.expect("failed to write to temporary desktop_email_client_backend.port file");
 
 	let (database_changed_tx, database_changed_rx) = broadcast::channel(10);
 	let database_changed_sse_state = DatabaseChangedSseState {
@@ -61,12 +64,14 @@ pub async fn run_server(
 
 		let cps = DefaultHeaders::new().add((
 			"Content-Security-Policy",
-			"default-src 'self'; \
+			format!(
+				"default-src 'self'; \
                  script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'; \
                  style-src 'self' 'unsafe-inline'; \
-                 connect-src 'self' http://localhost:8080 ws://localhost:8080; \
+                 connect-src 'self' http://localhost:{port} ws://localhost:{port}; \
                  img-src 'self' data:; \
-                 font-src 'self' data:;",
+                 font-src 'self' data:;"
+			),
 		));
 
 		App::new()
@@ -77,7 +82,7 @@ pub async fn run_server(
 			.configure(configure_api_routes)
 			.service(Files::new("/", &frontend_dist_dir).index_file("index.html"))
 	})
-	.bind(("localhost", port))?
+	.listen(listener)?
 	.run()
 	.await
 }

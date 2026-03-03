@@ -1,6 +1,6 @@
 use crate::Backend;
-use actix_web::Responder;
 use actix_web::web::{Data, Json, ServiceConfig, get, post};
+use actix_web::{HttpResponse, Responder};
 use actix_web_lab::sse::{self, Sse};
 use desktop_email_client_shared::{
 	API_ROUTE, Api, DATABASE_CHANGED_EVENT_NAME, DatabaseChangedEvent, Request, Response,
@@ -26,6 +26,8 @@ pub fn configure_api_routes(service_cfg: &mut ServiceConfig) {
 		&format!("{}/{}", API_ROUTE, DATABASE_CHANGED_EVENT_NAME),
 		get().to(database_changed_sse),
 	);
+
+	service_cfg.route("/api/health", get().to(HttpResponse::Ok));
 }
 
 pub struct DatabaseChangedSseState {

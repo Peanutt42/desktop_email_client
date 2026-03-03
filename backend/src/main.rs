@@ -9,10 +9,6 @@ async fn main() -> std::io::Result<()> {
 
 	let frontend_dist_dir =
 		std::env::var("FRONTEND_DIST_PATH").unwrap_or_else(|_| "../frontend/dist".to_string());
-	let port: u16 = std::env::var("PORT")
-		.ok()
-		.and_then(|port_str| port_str.parse().ok())
-		.unwrap_or(8080);
 
 	let url = std::env::var("DATABASE_URL")
 		.expect("`DATABASE_URL` env var not set, please set it (temporary or in .env file)");
@@ -23,5 +19,5 @@ async fn main() -> std::io::Result<()> {
 		database.populate_with_mock_data().await;
 	}
 
-	run_server(database, port, PathBuf::from(frontend_dist_dir)).await
+	run_server(database, PathBuf::from(frontend_dist_dir)).await
 }

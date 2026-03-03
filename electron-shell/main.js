@@ -2,6 +2,8 @@ const { app, BrowserWindow } = require('electron')
 const { spawn } = require('child_process')
 const http = require('http')
 const path = require('path')
+const fs = require('fs')
+const os = require('os')
 
 let backendProcess
 let mainWindow
@@ -25,6 +27,11 @@ function getDatabasePath() {
   return path.join(app.getPath('userData'), 'db.sqlite')
 }
 
+function getBackendPortPath() {
+	return path.join(os.tmpdir(), 'desktop_email_client_backend.port')
+
+}
+
 function startBackend() {
   const binaryPath = getBinaryPath()
   const frontendDistPath = getFrontendDistPath()
@@ -34,7 +41,6 @@ function startBackend() {
     env: {
       ...process.env,
       FRONTEND_DIST_PATH: frontendDistPath,
-      PORT: '8080',
       DATABASE_URL: 'sqlite://' + getDatabasePath(),
       RUST_LOG: 'info,desktop_email_client_backend=debug'
     }
@@ -45,10 +51,33 @@ function startBackend() {
   })
 }
 
-function waitForBackend(retries = 20) {
+function waitForBackendPort(portFile, retries = 25) {
   return new Promise((resolve, reject) => {
     const attempt = () => {
-      http.get('http://localhost:8080', () => resolve()).on('error', () => {
+      try {
+        const port = parseInt(fs.readFileSync(portFile, 'utf8').trim())
+        if (!isNaN(port)) {
+          fs.unlinkSync(portFile)
+          resolve(port)
+        } else {
+          retry()
+        }
+      } catch {
+        retry()
+      }
+    }
+    const retry = () => {
+      if (retries-- > 0) setTimeout(attempt, 200)
+      else reject(new Error('Backend never wrote port file'))
+    }
+    attempt()
+  })
+}
+
+function waitForBackend(port, retries = 20) {
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      http.get('http://localhost:' + port + '/api/health', () => resolve()).on('error', () => {
         if (retries-- > 0) setTimeout(attempt, 200)
         else reject(new Error('Backend never started'))
       })
@@ -57,7 +86,7 @@ function waitForBackend(retries = 20) {
   })
 }
 
-function createWindow() {
+function createWindow(port) {
   mainWindow = new BrowserWindow({
     show: false,
     width: 1280,
@@ -68,7 +97,7 @@ function createWindow() {
     autoHideMenuBar: true
   })
 
-  mainWindow.loadURL('http://localhost:8080')
+  mainWindow.loadURL('http://localhost:' + port)
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
@@ -76,9 +105,12 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  portFilepath = getBackendPortPath()
+  try { fs.unlickSync(portFilepath) } catch (_e) {}
   startBackend()
-  await waitForBackend()
-  createWindow()
+  const port = await waitForBackendPort(portFilepath)
+  await waitForBackend(port)
+  createWindow(port)
 })
 
 app.on('window-all-closed', () => {
