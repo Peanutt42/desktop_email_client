@@ -106,7 +106,7 @@ function createWindow(port) {
 
 app.whenReady().then(async () => {
   portFilepath = getBackendPortPath()
-  try { fs.unlickSync(portFilepath) } catch (_e) {}
+  try { fs.rmSync(portFilepath) } catch (_e) {}
   startBackend()
   const port = await waitForBackendPort(portFilepath)
   await waitForBackend(port)
